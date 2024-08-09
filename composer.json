@@ -1,0 +1,21 @@
+{
+    "name": "rapid/stackweb",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "StackWeb\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mahdi Saremi",
+            "email": "mahdisarmi00@gmail.com"
+        }
+    ],
+    "require": {
+        "laravel/framework": "^11.20"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.2"
+    }
+}
