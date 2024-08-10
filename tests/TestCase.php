@@ -1,8 +1,8 @@
 <?php
 
-namespace Rapid\Laplus\Tests;
+namespace StackWeb\Tests;
 
-use Rapid\Laplus\LaplusServiceProvider;
+use StackWeb\StackWebServiceProvider;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -11,7 +11,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         return [
             ...parent::getPackageProviders($app),
-            LaplusServiceProvider::class,
+            StackWebServiceProvider::class,
         ];
     }
 

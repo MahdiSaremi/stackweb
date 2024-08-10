@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dd0dd298ef27b6e2d6611f782380f0d6",
+    "content-hash": "ac6971ee41bcc8bb6d5878d1a24c2340",
     "packages": [
         {
             "name": "brick/math",
@@ -1049,6 +1049,64 @@
                 }
             ],
             "time": "2023-12-03T19:50:20+00:00"
+        },
+        {
+            "name": "js-phpize/js-phpize",
+            "version": "2.9.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pug-php/js-phpize.git",
+                "reference": "0e8e536b770291d6ae973d10c261fc4520256633"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/pug-php/js-phpize/zipball/0e8e536b770291d6ae973d10c261fc4520256633",
+                "reference": "0e8e536b770291d6ae973d10c261fc4520256633",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.5.14 || ^7.5.20 || ^8.5.31 || ^9.5.27"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "JsPhpize": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kyle Katarn",
+                    "email": "kylekatarnls@gmail.com"
+                }
+            ],
+            "description": "Convert js-like syntax to standalone PHP code.",
+            "support": {
+                "issues": "https://github.com/pug-php/js-phpize/issues",
+                "source": "https://github.com/pug-php/js-phpize/tree/2.9.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/kylekatarnls",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/pug-php",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/pug-php/pug",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2023-08-29T09:05:09+00:00"
         },
         {
             "name": "laravel/framework",

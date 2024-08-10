@@ -6,6 +6,11 @@
             "StackWeb\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "StackWeb\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Mahdi Saremi",
@@ -13,7 +18,8 @@
         }
     ],
     "require": {
-        "laravel/framework": "^11.20"
+        "laravel/framework": "^11.20",
+        "js-phpize/js-phpize": "^2.9"
     },
     "require-dev": {
         "orchestra/testbench": "^9.2"
