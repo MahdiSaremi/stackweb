@@ -23,5 +23,12 @@
     },
     "require-dev": {
         "orchestra/testbench": "^9.2"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "StackWeb\\StackWebServiceProvider"
+            ]
+        }
     }
 }
