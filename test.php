@@ -8,6 +8,7 @@ use StackWeb\Lexer\Js\JsReader;
 
 require __DIR__ . '/vendor/autoload.php';
 
+
 $reader = new JsReader(<<<JS
     let x = function () {
         return 20;
