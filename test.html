@@ -5,19 +5,58 @@
     <title>Title</title>
 </head>
 <body>
-<script>
-    let StackWeb = {
-        Type: {},
-        Render: {},
-    }
+<div id="root"></div>
 
-    let x = [
-        ['div', {
-            class: 'bg-green-500',
-        }, [
-            ['span', {}, ['Hello World']]
-        ]]
-    ]
+<script src="./dist/stackweb.min.js"></script>
+
+<script>
+    let root = new StackWeb.Root(new StackWeb.Group([
+        window.main = new StackWeb.Component({
+            states: ($) => ({
+                count: 0,
+                toggle: true,
+                toggle2: true,
+            }),
+            slot: ($) => new StackWeb.Group([
+                new StackWeb.Dom({
+                    name: 'div',
+                    attrs: {
+                        class: 'bg-green-500',
+                    },
+                    slot: new StackWeb.Group([
+                        new StackWeb.HelloWorld(),
+                        new StackWeb.Dom({
+                            name: 'br',
+                            slot: new StackWeb.Group([]),
+                        }),
+                        new StackWeb.Text($.getState('count'))
+                    ]),
+                }),
+                window.cmp2 ??= new StackWeb.Component({
+                    states: () => ({}),
+                    slot: ($) => new StackWeb.Group([
+                        new StackWeb.HelloWorld(),
+                    ])
+                }),
+                new StackWeb.If($.getState('toggle'), new StackWeb.Group([
+                    new StackWeb.Text('A'),
+                ])),
+                new StackWeb.If($.getState('toggle2'), new StackWeb.Group([
+                    new StackWeb.Text('B'),
+                ])),
+                new StackWeb.Text('Value'),
+            ]),
+        })
+    ]))
+
+    root.mount(null, null, document.getElementById('root'))
+
+    // setInterval(() => root.refresh(), 2000)
 </script>
+
+<button onclick="main.track(() => main.setState('count', main.getState('count') + 1))">Add</button>
+<button onclick="cmp2.refresh()">Refresh (2)</button>
+<button onclick="main.track(() => main.setState('toggle', !main.getState('toggle')))">Toggle A</button>
+<button onclick="main.track(() => main.setState('toggle2', !main.getState('toggle2')))">Toggle B</button>
 </body>
 </html>

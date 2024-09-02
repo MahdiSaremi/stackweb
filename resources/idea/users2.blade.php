@@ -1,6 +1,6 @@
 
 component {
-    state $userList
+    state userList
 
     api run updateUsers () {
         @php
@@ -9,14 +9,14 @@ component {
     }
 
     client test () {
-        state.userList = ['Test']
+        userList = ['Test']
     }
 
     render {
         <ul>
-            @foreach($userList as $user)
-                <User user={{ $user }} />
-            @endforeach
+            <template x-for="user in userList">
+                <User :user="user" />
+            </template>
         </ul>
 
         <button @click={{ $api->updateUsers }}>Refresh</button>
