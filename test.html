@@ -10,8 +10,8 @@
 <script src="./dist/stackweb.min.js"></script>
 
 <script>
-    let root = new StackWeb.Root(new StackWeb.Group([
-        window.main = new StackWeb.Component({
+    function App() {
+        return new StackWeb.Component({
             states: ($) => ({
                 count: 0,
                 toggle: true,
@@ -32,12 +32,7 @@
                         new StackWeb.Text($.getState('count'))
                     ]),
                 }),
-                window.cmp2 ??= new StackWeb.Component({
-                    states: () => ({}),
-                    slot: ($) => new StackWeb.Group([
-                        new StackWeb.HelloWorld(),
-                    ])
-                }),
+                window.cmp2 ??= new StackWeb.Invoke(Test(), {}, {}),
                 new StackWeb.If($.getState('toggle'), new StackWeb.Group([
                     new StackWeb.Text('A'),
                 ])),
@@ -47,6 +42,19 @@
                 new StackWeb.Text('Value'),
             ]),
         })
+    }
+
+    function Test() {
+        return new StackWeb.Component({
+            states: () => ({}),
+            slot: ($) => new StackWeb.Group([
+                new StackWeb.HelloWorld(),
+            ])
+        })
+    }
+
+    let root = new StackWeb.Root(new StackWeb.Group([
+        window.main = new StackWeb.Invoke(App(), {}, {})
     ]))
 
     root.mount(null, null, document.getElementById('root'))

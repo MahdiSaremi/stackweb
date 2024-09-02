@@ -26,7 +26,16 @@ abstract class Entity {
     }
 
     public morph(other: Entity) {
-        this.morph(other)
+        if (this.isStatic) return
+
+        this.onMorph(other)
+    }
+
+
+    isStatic: boolean = false
+    public static() {
+        this.isStatic = true
+        return this
     }
 
 
@@ -250,46 +259,71 @@ class HelloWorld extends Entity {
 }
 
 interface ComponentRegister {
-    states: ($: Component) => Object
-    slot: ($: Component) => Group
+    states: ($: Invoke) => Object
+    slot: ($: Invoke) => Group
 }
 
-class Component extends Entity {
+class Component {
     source: ComponentRegister
-    states = {}
-    slot: Group
 
     constructor(source: ComponentRegister) {
-        super()
         this.source = source
     }
 
-    onMount() {
-        this.states = this.source.states(this)
-        this.slot = this.source.slot(this)
+    // Modes: 0 - Never Morph, 1 - Always Morph, 2 - Morph When
+    morphMode: number = 0
+    morphCond: boolean
 
-        this.slot.mount(this, this.parentE, this.el)
+    public morphType(mode: number, condition?: boolean) {
+        this.morphMode = mode
+        this.morphCond = condition
+        return this
+    }
+}
+
+class Invoke extends Entity {
+    component: Component
+    slots: Object
+    attrs: Object
+    states = {}
+    content: Group
+
+    constructor(component: Component, slots: Object, attrs: Object) {
+        super()
+        this.component = component
+        this.slots = slots
+        this.attrs = attrs
+    }
+
+    onMount() {
+        this.states = this.component.source.states(this)
+        this.content = this.component.source.slot(this)
+
+        this.content.mount(this, this.parentE, this.el)
     }
 
     onUnmount() {
-        this.slot.unmount()
+        this.content.unmount()
     }
 
     reset() {
-        this.states = this.source.states(this)
+        this.states = this.component.source.states(this)
     }
 
     changed: boolean = false
 
     refresh() {
-        const newSlot = this.source.slot(this)
+        const newSlot = this.component.source.slot(this)
 
-        this.slot.morph(newSlot)
+        this.content.morph(newSlot)
 
         this.changed = false
     }
 
     onMorph(other: Entity) {
+        if (this.component.morphMode == 1 || (this.component.morphMode == 2 && this.component.morphCond)) {
+            this.content.morph((other as Invoke).content)
+        }
     }
 
     getState(name: string) {
@@ -309,7 +343,7 @@ class Component extends Entity {
     }
 
     resolveRelativeNodes(): [Node, Node] {
-        return this.slot.resolveRelativeNodes()
+        return this.content.resolveRelativeNodes()
     }
 
     resolveNextNodeOf(child: Entity): Node {
@@ -374,6 +408,7 @@ let StackWeb = {
     Text,
     HelloWorld,
     Component,
+    Invoke,
     If,
 }
 

@@ -2,6 +2,7 @@
 var Entity = class {
   constructor() {
     this.isMounted = false;
+    this.isStatic = false;
   }
   mount(parent, parentE, el) {
     this.parent = parent;
@@ -16,7 +17,13 @@ var Entity = class {
     this.isMounted = false;
   }
   morph(other) {
-    this.morph(other);
+    if (this.isStatic)
+      return;
+    this.onMorph(other);
+  }
+  static() {
+    this.isStatic = true;
+    return this;
   }
   insertNode(node) {
     if (this.parentE.isMounted) {
@@ -177,30 +184,46 @@ var HelloWorld = class extends Entity {
     return void 0;
   }
 };
-var Component = class extends Entity {
+var Component = class {
   constructor(source) {
+    this.morphMode = 0;
+    this.source = source;
+  }
+  morphType(mode, condition) {
+    this.morphMode = mode;
+    this.morphCond = condition;
+    return this;
+  }
+};
+var Invoke = class extends Entity {
+  constructor(component, slots, attrs) {
     super();
     this.states = {};
     this.changed = false;
-    this.source = source;
+    this.component = component;
+    this.slots = slots;
+    this.attrs = attrs;
   }
   onMount() {
-    this.states = this.source.states(this);
-    this.slot = this.source.slot(this);
-    this.slot.mount(this, this.parentE, this.el);
+    this.states = this.component.source.states(this);
+    this.content = this.component.source.slot(this);
+    this.content.mount(this, this.parentE, this.el);
   }
   onUnmount() {
-    this.slot.unmount();
+    this.content.unmount();
   }
   reset() {
-    this.states = this.source.states(this);
+    this.states = this.component.source.states(this);
   }
   refresh() {
-    const newSlot = this.source.slot(this);
-    this.slot.morph(newSlot);
+    const newSlot = this.component.source.slot(this);
+    this.content.morph(newSlot);
     this.changed = false;
   }
   onMorph(other) {
+    if (this.component.morphMode == 1 || this.component.morphMode == 2 && this.component.morphCond) {
+      this.content.morph(other.content);
+    }
   }
   getState(name) {
     return this.states[name];
@@ -216,7 +239,7 @@ var Component = class extends Entity {
     }
   }
   resolveRelativeNodes() {
-    return this.slot.resolveRelativeNodes();
+    return this.content.resolveRelativeNodes();
   }
   resolveNextNodeOf(child) {
     return this.parent.resolveNextNodeOf(this);
@@ -268,6 +291,7 @@ var StackWeb = {
   Text,
   HelloWorld,
   Component,
+  Invoke,
   If
 };
 window["StackWeb"] = StackWeb;
