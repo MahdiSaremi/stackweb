@@ -130,12 +130,63 @@ class Tokenizer implements TokenizerContract
         $string->readWhiteSpaces();
         while (!$string->end())
         {
-            ... // TODO
+            $word = $string->readCWord();
+
+            switch ($word)
+            {
+                case 'render':
+                    $tokens[] = $this->parseRender($string);
+                    break;
+
+                case 'slot':
+                    $tokens[] = $this->parseSlot($string);
+                    break;
+
+                default:
+                    throw new SyntaxError("Unexpected symbol [$word]");
+            }
 
             $string->readWhiteSpaces();
         }
 
         return $tokens;
+    }
+
+    public function parseRender(StringReader $string) : Tokens\_ComponentRenderToken
+    {
+        $string->readWhiteSpaces();
+        if ($string->readIf('{'))
+        {
+            $inner = new StringReader($string->readRange('{', '}', $this->escapes));
+
+            return new Tokens\_ComponentRenderToken($inner->readAll());
+        }
+        else
+        {
+            throw new SyntaxError("Expected '{'");
+        }
+    }
+
+    public function parseSlot(StringReader $string) : Tokens\_ComponentSlotToken
+    {
+        $string->readWhiteSpaces();
+        if ($string->readIf('$') && $name = $string->readCWord())
+        {
+            $string->readWhiteSpaces();
+            $default = null;
+            if ($string->readIf('{'))
+            {
+                $inner = new StringReader($string->readRange('{', '}', $this->escapes));
+
+                $default = $inner->readAll();
+            }
+
+            return new Tokens\_ComponentSlotToken($name, $default);
+        }
+        else
+        {
+            throw new SyntaxError("Expected slot name");
+        }
     }
 
     public function getTokens() : array
