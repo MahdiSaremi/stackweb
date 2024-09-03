@@ -40,6 +40,7 @@
                     new StackWeb.Text('B'),
                 ])),
                 new StackWeb.Text('Value'),
+                new StackWeb.Invoke(Button(), {}, {text: "Hi " + Math.floor(Math.random() * 1000)})
             ]),
         })
     }
@@ -53,8 +54,23 @@
         })
     }
 
+    function Button() {
+        return new StackWeb.Component({
+            states: () => ({}),
+            slot: ($) => new StackWeb.Group([
+                new StackWeb.Dom({
+                    name: 'button',
+                    attrs: {},
+                    slot: new StackWeb.Group([
+                        new StackWeb.Text($.get('text')),
+                    ])
+                }),
+            ])
+        })
+    }
+
     let root = new StackWeb.Root(new StackWeb.Group([
-        window.main = new StackWeb.Invoke(App(), {}, {})
+        window.main = new StackWeb.Invoke(App(), {}, {}),
     ]))
 
     root.mount(null, null, document.getElementById('root'))

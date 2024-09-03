@@ -190,9 +190,8 @@
       this.morphMode = 0;
       this.source = source;
     }
-    morphType(mode, condition) {
+    morphType(mode) {
       this.morphMode = mode;
-      this.morphCond = condition;
       return this;
     }
   };
@@ -222,8 +221,22 @@
       this.changed = false;
     }
     onMorph(other) {
-      if (this.component.morphMode == 1 || this.component.morphMode == 2 && this.component.morphCond) {
-        this.content.morph(other.content);
+      if (this.component.morphMode == 0) {
+        let changed = false;
+        if (JSON.stringify(this.slots) !== JSON.stringify(other.slots)) {
+          changed = true;
+          this.slots = other.slots;
+        }
+        if (JSON.stringify(this.attrs) !== JSON.stringify(other.attrs)) {
+          changed = true;
+          this.attrs = other.attrs;
+        }
+        if (changed) {
+          this.content.morph(other.component.source.slot(this));
+        }
+      }
+      if (this.component.morphMode == 1) {
+        this.content.morph(other.component.source.slot(this));
       }
     }
     getState(name) {
@@ -238,6 +251,24 @@
       if (this.changed) {
         this.refresh();
       }
+    }
+    getSlot(name = "") {
+      return this.slots[name];
+    }
+    getProp(name) {
+      return this.attrs[name];
+    }
+    get(name) {
+      if (this.states[name] !== void 0) {
+        return this.states[name];
+      }
+      if (this.attrs[name] !== void 0) {
+        return this.attrs[name];
+      }
+      if (this.slots[name] !== void 0) {
+        return this.slots[name];
+      }
+      return void 0;
     }
     resolveRelativeNodes() {
       return this.content.resolveRelativeNodes();

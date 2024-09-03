@@ -270,13 +270,11 @@ class Component {
         this.source = source
     }
 
-    // Modes: 0 - Never Morph, 1 - Always Morph, 2 - Morph When
+    // Modes: 0 - When Update, 1 - Always Morph, 2 - Never Morph
     morphMode: number = 0
-    morphCond: boolean
 
-    public morphType(mode: number, condition?: boolean) {
+    morphType(mode: number) {
         this.morphMode = mode
-        this.morphCond = condition
         return this
     }
 }
@@ -321,8 +319,23 @@ class Invoke extends Entity {
     }
 
     onMorph(other: Entity) {
-        if (this.component.morphMode == 1 || (this.component.morphMode == 2 && this.component.morphCond)) {
-            this.content.morph((other as Invoke).content)
+        if (this.component.morphMode == 0) {
+            let changed = false
+            if (JSON.stringify(this.slots) !== JSON.stringify((other as Invoke).slots)) {
+                changed = true
+                this.slots = (other as Invoke).slots
+            }
+            if (JSON.stringify(this.attrs) !== JSON.stringify((other as Invoke).attrs)) {
+                changed = true
+                this.attrs = (other as Invoke).attrs
+            }
+
+            if (changed) {
+                this.content.morph((other as Invoke).component.source.slot(this))
+            }
+        }
+        if (this.component.morphMode == 1) {
+            this.content.morph((other as Invoke).component.source.slot(this))
         }
     }
 
@@ -340,6 +353,28 @@ class Invoke extends Entity {
         if (this.changed) {
             this.refresh()
         }
+    }
+
+    getSlot(name: string = '') {
+        return this.slots[name]
+    }
+
+    getProp(name: string) {
+        return this.attrs[name]
+    }
+
+    get(name: string) {
+        if (this.states[name] !== undefined) {
+            return this.states[name]
+        }
+        if (this.attrs[name] !== undefined) {
+            return this.attrs[name]
+        }
+        if (this.slots[name] !== undefined) {
+            return this.slots[name]
+        }
+
+        return undefined
     }
 
     resolveRelativeNodes(): [Node, Node] {
