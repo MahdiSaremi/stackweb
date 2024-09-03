@@ -286,6 +286,44 @@ class StringReader
         return $result;
     }
 
+
+    public function readCWord()
+    {
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_']));
+    }
+
+    public function readJWord()
+    {
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_','$']));
+    }
+
+    public function readIf(
+        string|array $value,
+    ) : ?string
+    {
+        if (is_string($value))
+        {
+            if ($this->read(strlen($value), silent: true) == $value)
+            {
+                $this->offset += strlen($value);
+                return $value;
+            }
+
+            return null;
+        }
+
+        foreach ($value as $val)
+        {
+            if ($this->read(strlen($val), silent: true) == $val)
+            {
+                $this->offset += strlen($val);
+                return $val;
+            }
+        }
+
+        return null;
+    }
+
     public function silent(Closure $callback)
     {
         $offset = $this->offset;

@@ -2,7 +2,16 @@
 
 namespace StackWeb\Compilers\Stack\Tokens;
 
-class _ComponentPropToken
+use StackWeb\Compilers\Contracts\Token;
+
+readonly class _ComponentPropToken implements Token
 {
+
+    public function __construct(
+        public string $name,
+        public mixed $default,
+    )
+    {
+    }
 
 }
