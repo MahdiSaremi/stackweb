@@ -13,7 +13,9 @@ class StackWebServiceProvider extends ServiceProvider
 
     public function register()
     {
-        View::addExtension('stack.php', 'stack-web');
+        View::addExtension('stack.php', 'stack-web', function () {
+            return new Engine\StackWebEngine();
+        });
     }
 
 }
