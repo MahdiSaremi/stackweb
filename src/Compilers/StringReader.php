@@ -129,6 +129,11 @@ class StringReader
         );
     }
 
+    public function readWhiteSpaces()
+    {
+        return $this->readWhile(ctype_space(...));
+    }
+
     public function readEscape(
         string $char,
         string $escape = '\\',

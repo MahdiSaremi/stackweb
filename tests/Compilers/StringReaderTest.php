@@ -180,7 +180,7 @@ class StringReaderTest extends TestCase
         $this->assertSame('Range {Deep "String}', $string->readRange('{', '}'));
 
         $string = new StringReader('This {Is "A }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} }');
-        $this->assertSame('This {Is "The }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} ', $string->readRange('{', '}', ['"']));
+        $this->assertSame('This {Is "A }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} ', $string->readRange('{', '}', ['"']));
     }
 
     public function test_read_trig()
@@ -196,6 +196,14 @@ class StringReaderTest extends TestCase
 
         $string = new StringReader('Foo { ,, } "," { "," } ,');
         $this->assertSame('Foo { ,, } "," { "," } ', $string->readTrig(',', ['"'], [['{', '}', ['"']]]));
+    }
+
+    public function test_white_spaces()
+    {
+        $string = new StringReader(" \r\n\tA");
+        $string->readWhiteSpaces();
+
+        $this->assertSame('A', $string->read());
     }
 
 }
