@@ -159,7 +159,10 @@ class Tokenizer implements TokenizerContract
         {
             $inner = new StringReader($string->readRange('{', '}', $this->escapes));
 
-            return new Tokens\_ComponentRenderToken($inner->readAll());
+            $htmlX = new \StackWeb\Compilers\HtmlX\Tokenizer($inner);
+            $htmlX->parse();
+
+            return new Tokens\_ComponentRenderToken($htmlX->getTokens());
         }
         else
         {
@@ -178,7 +181,10 @@ class Tokenizer implements TokenizerContract
             {
                 $inner = new StringReader($string->readRange('{', '}', $this->escapes));
 
-                $default = $inner->readAll();
+                $htmlX = new \StackWeb\Compilers\HtmlX\Tokenizer($inner);
+                $htmlX->parse();
+
+                $default = $htmlX->getTokens();
             }
 
             return new Tokens\_ComponentSlotToken($name, $default);

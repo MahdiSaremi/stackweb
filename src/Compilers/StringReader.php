@@ -7,6 +7,9 @@ use Closure;
 class StringReader
 {
 
+    public const int DONT_INCLUDE = 2;
+    public const int REPLACE_WITH = 4;
+
     public int          $offset = 0;
     public readonly int $length;
 
@@ -80,10 +83,27 @@ class StringReader
                 break;
             }
 
-            if ($trigger($read))
+            $trig = $trigger($read);
+            if ($trig === true)
             {
                 $result .= $jump < $step && !$isFirst ? @substr($read, $step - $jump) : $read;
                 $this->offset += $jump;
+            }
+            elseif ($trig === static::DONT_INCLUDE)
+            {
+                $this->offset += $jump;
+            }
+            elseif (is_array($trig))
+            {
+                if ($trig[0] === static::REPLACE_WITH)
+                {
+                    $result .= $jump < $step && !$isFirst ? @substr($trig[1], $step - $jump) : $trig[1];
+                    $this->offset += $jump;
+                }
+                else
+                {
+                    throw new \InvalidArgumentException("Unknown returned type");
+                }
             }
             else
             {
@@ -121,7 +141,11 @@ class StringReader
     ) : string
     {
         return $this->readWhile(
-            fn($value) => !$trigger($value),
+            function ($value) use($trigger)
+            {
+                $result = $trigger($value);
+                return is_bool($result) ? !$result : $result;
+            },
             $step, $jump,
             $forceLength,
             $skipBreaker, $includeBreaker,
@@ -139,6 +163,7 @@ class StringReader
         string $escape = '\\',
         bool   $skipBreaker = true,
         bool   $includeBreaker = false,
+        bool   $translate = false,
         ?bool  &$found = false
     )
     {
@@ -149,18 +174,18 @@ class StringReader
 
         $skipNext = false;
         return $this->readUntil(
-            function($value) use (&$skipNext, $char, $escape)
+            function($value) use (&$skipNext, $char, $escape, $translate)
             {
                 if ($value === $escape)
                 {
                     $skipNext = true;
-                    return false;
+                    return $translate ? static::DONT_INCLUDE : false;
                 }
 
                 if ($skipNext)
                 {
                     $skipNext = false;
-                    return false;
+                    return $translate ? [static::REPLACE_WITH, $this->getEscapedValue($value) ?? $escape . $value] : false;
                 }
 
                 return $value === $char;
@@ -169,6 +194,22 @@ class StringReader
             includeBreaker: $includeBreaker,
             broken        : $found,
         );
+    }
+
+    protected function getEscapedValue(string $char)
+    {
+        return match ($char)
+        {
+            'n' => "\n",
+            'r' => "\r",
+            'e' => "\e",
+            '0' => "\0",
+            't' => "\t",
+            'f' => "\f",
+            'v' => "\v",
+            '"', "'", "\\" => $char,
+            default => null,
+        };
     }
 
     public function readRange(
@@ -295,6 +336,11 @@ class StringReader
     public function readJWord()
     {
         return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_','$']));
+    }
+
+    public function readHWord()
+    {
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_',':','.','-']));
     }
 
     public function readIf(

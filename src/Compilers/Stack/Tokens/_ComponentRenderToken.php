@@ -8,7 +8,7 @@ readonly class _ComponentRenderToken implements Token
 {
 
     public function __construct(
-        public mixed $content,
+        public array $content,
     )
     {
     }

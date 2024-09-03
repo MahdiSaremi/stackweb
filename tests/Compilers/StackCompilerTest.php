@@ -14,7 +14,15 @@ class StackCompilerTest extends TestCase
         $tokenizer = new Tokenizer(new StringReader(
             <<<'Stack'
             component Counter ($foo = null, $bar) {
+                slot $icon {
+                    <svg />
+                }
                 
+                state $count = { 0 }
+            
+                render {
+                    <div>Hello</div>
+                }
             }
             Stack
         ));

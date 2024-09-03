@@ -110,6 +110,56 @@ class StringReaderTest extends TestCase
         $this->assertSame(3, $string->offset);
     }
 
+    public function test_read_while_dont_include()
+    {
+        $string = new StringReader("12.34,56");
+
+        $res = $string->readWhile(
+            function ($value)
+            {
+                if (is_numeric($value))
+                {
+                    return true;
+                }
+                elseif ($value == '.')
+                {
+                    return StringReader::DONT_INCLUDE;
+                }
+                else
+                {
+                    return false;
+                }
+            },
+        );
+        $this->assertSame('1234', $res);
+        $this->assertSame(5, $string->offset);
+    }
+
+    public function test_read_while_replace_with()
+    {
+        $string = new StringReader("12.34,56");
+
+        $res = $string->readWhile(
+            function ($value)
+            {
+                if (is_numeric($value))
+                {
+                    return true;
+                }
+                elseif ($value == '.')
+                {
+                    return [StringReader::REPLACE_WITH, ','];
+                }
+                else
+                {
+                    return false;
+                }
+            },
+        );
+        $this->assertSame('12,34', $res);
+        $this->assertSame(5, $string->offset);
+    }
+
 
     public function test_simple_read_until()
     {
@@ -144,6 +194,56 @@ class StringReaderTest extends TestCase
         $this->assertSame(false, $broken);
     }
 
+    public function test_read_until_dont_include()
+    {
+        $string = new StringReader("12.34,56");
+
+        $res = $string->readUntil(
+            function ($value)
+            {
+                if ($value == ',')
+                {
+                    return true;
+                }
+                elseif ($value == '.')
+                {
+                    return StringReader::DONT_INCLUDE;
+                }
+                else
+                {
+                    return false;
+                }
+            },
+        );
+        $this->assertSame('1234', $res);
+        $this->assertSame(5, $string->offset);
+    }
+
+    public function test_read_until_replace_with()
+    {
+        $string = new StringReader("12.34,56");
+
+        $res = $string->readUntil(
+            function ($value)
+            {
+                if ($value == ',')
+                {
+                    return true;
+                }
+                elseif ($value == '.')
+                {
+                    return [StringReader::REPLACE_WITH, ','];
+                }
+                else
+                {
+                    return false;
+                }
+            },
+        );
+        $this->assertSame('12,34', $res);
+        $this->assertSame(5, $string->offset);
+    }
+
     public function test_silent_process()
     {
         $string = new StringReader("Hello World");
@@ -162,6 +262,9 @@ class StringReaderTest extends TestCase
 
         $string = new StringReader('Hi\\" Foo \\n Bar " Exclude');
         $this->assertSame('Hi\\" Foo \\n Bar ', $string->readEscape('"'));
+
+        $string->offset = 0;
+        $this->assertSame("Hi\" Foo \n Bar ", $string->readEscape('"', translate: true));
     }
 
     public function test_read_range()
@@ -204,6 +307,23 @@ class StringReaderTest extends TestCase
         $string->readWhiteSpaces();
 
         $this->assertSame('A', $string->read());
+    }
+
+    public function test_read_if()
+    {
+        $string = new StringReader("Foo Bar");
+
+        $this->assertSame('F', $string->readIf('F'));
+        $this->assertSame(1, $string->offset);
+
+        $this->assertSame('oo', $string->readIf('oo'));
+        $this->assertSame(3, $string->offset);
+
+        $this->assertSame(null, $string->readIf('Bar'));
+        $this->assertSame(3, $string->offset);
+
+        $this->assertSame(' Bar', $string->readIf(['Foo', ' Bar']));
+        $this->assertSame(7, $string->offset);
     }
 
 }

@@ -9,7 +9,7 @@ readonly class _ComponentSlotToken implements Token
 
     public function __construct(
         public string $name,
-        public mixed $default,
+        public array $default,
     )
     {
     }
