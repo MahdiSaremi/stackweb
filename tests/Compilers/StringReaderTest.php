@@ -183,4 +183,19 @@ class StringReaderTest extends TestCase
         $this->assertSame('This {Is "The }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} ', $string->readRange('{', '}', ['"']));
     }
 
+    public function test_read_trig()
+    {
+        $string = new StringReader('A,B');
+        $this->assertSame('A', $string->readTrig(','));
+
+        $string = new StringReader('A "S,T,R" B,');
+        $this->assertSame('A "S,T,R" B', $string->readTrig(',', ['"']));
+
+        $string->offset = 0;
+        $this->assertSame('A "S', $string->readTrig(','));
+
+        $string = new StringReader('Foo { ,, } "," { "," } ,');
+        $this->assertSame('Foo { ,, } "," { "," } ', $string->readTrig(',', ['"'], [['{', '}', ['"']]]));
+    }
+
 }

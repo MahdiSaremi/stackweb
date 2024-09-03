@@ -44,6 +44,16 @@ class StringReader
         return $result;
     }
 
+    public function readAll() : ?string
+    {
+        if ($this->end()) return null;
+
+        $result = substr($this->content, $this->offset);
+        $this->offset = $this->length;
+
+        return $result;
+    }
+
     public function readWhile(
         Closure $trigger,
         int     $step = 1,
@@ -205,6 +215,61 @@ class StringReader
                 }
 
                 $result .= $read;
+            }
+            else
+            {
+                $result .= $read;
+            }
+        }
+
+        $found = false;
+        return $result;
+    }
+
+    public function readTrig(
+        string $char,
+        array  $escapes = [],
+        array  $ranges = [],
+        bool   $skipBreaker = true,
+        bool   $includeBreaker = false,
+        ?bool &$found = false,
+    )
+    {
+        $escapes = array_map(fn($escape) => is_array($escape) ? $escape : [$escape], $escapes);
+        $escapeChars = array_map(fn($escape) => $escape[0], $escapes);
+        $rangeChars = array_map(fn($range) => $range[0], $ranges);
+        $result = '';
+
+        while (!$this->end())
+        {
+            $read = $this->read();
+
+            if (in_array($read, $escapeChars))
+            {
+                $result .= $read;
+                $escape = $escapes[array_search($read, $escapeChars)];
+                $result .= $this->readEscape(...$escape, includeBreaker: true);
+            }
+            elseif (in_array($read, $rangeChars))
+            {
+                $result .= $read;
+                $range = $ranges[array_search($read, $rangeChars)];
+                $result .= $this->readRange(...$range, includeBreaker: true);
+            }
+            elseif ($read === $char)
+            {
+                if ($includeBreaker)
+                {
+                    $result .= $read;
+                }
+
+                if (!$skipBreaker)
+                {
+                    $this->offset--;
+                }
+
+                $found = true;
+                return $result;
             }
             else
             {
