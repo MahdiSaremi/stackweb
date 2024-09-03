@@ -1,12 +1,12 @@
 <?php
 
-namespace StackWeb\Compilers\Stack\Tokens;
+namespace StackWeb\Compilers\HtmlX\Tokens;
 
 use StackWeb\Compilers\Concerns\TokenTrait;
 use StackWeb\Compilers\Contracts\Token;
 use StackWeb\Compilers\StringReader;
 
-readonly class _ComponentRenderToken implements Token
+class _PreToken implements Token
 {
     use TokenTrait;
 
@@ -15,7 +15,10 @@ readonly class _ComponentRenderToken implements Token
         public int $startOffset,
         public int $endOffset,
 
-        public array $content,
+        public string $type,
+        public mixed $content = null,
+        public ?bool $selfClose = null,
+        public ?array $props = null,
     )
     {
     }

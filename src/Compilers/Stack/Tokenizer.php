@@ -6,7 +6,6 @@ use StackWeb\Compilers\ApiPhp\ApiPhpStaticTokenizer;
 use StackWeb\Compilers\CliPhp\CliPhpStaticTokenizer;
 use StackWeb\Compilers\Contracts\Tokenizer as TokenizerContract;
 use StackWeb\Compilers\StringReader;
-use StackWeb\Compilers\SyntaxError;
 
 class Tokenizer implements TokenizerContract
 {
@@ -35,28 +34,29 @@ class Tokenizer implements TokenizerContract
         $string->readWhiteSpaces();
         while (!$string->end())
         {
+            $offset1 = $string->offset;
             if ('' !== $word = $string->readCWord())
             {
                 switch (strtolower($word))
                 {
                     case 'component':
-                        $this->tokens[] = $this->parseComponent($string);
+                        $this->tokens[] = $this->parseComponent($string, $offset1);
                         break;
 
                     default:
-                        throw new SyntaxError("Unknown symbol [$word]");
+                        $string->syntaxError("Unknown symbol [$word]");
                 }
             }
             else
             {
-                throw new SyntaxError("Syntax error");
+                $string->syntaxError("Syntax error");
             }
 
             $string->readWhiteSpaces();
         }
     }
 
-    public function parseComponent(StringReader $string) : Tokens\_ComponentToken
+    public function parseComponent(StringReader $string, int $start) : Tokens\_ComponentToken
     {
         $string->readWhiteSpaces();
         if ('' === $name = $string->readCWord())
@@ -65,28 +65,45 @@ class Tokenizer implements TokenizerContract
         }
 
         $string->readWhiteSpaces();
+        $offset1 = $string->offset;
         $props = [];
         if ($string->readIf('('))
         {
-            $inner = new StringReader($string->readRange('(', ')', $this->escapes));
-            $props = $this->parseComponentProps($inner);
+            $line = $string->getLine();
+            $index = $string->getIndex();
+            $inner = new StringReader(
+                $string->readRange('(', ')', $this->escapes),
+                $string->fileName,
+                $string,
+                $line,
+                $index,
+            );
+            $props = $this->parseComponentProps($inner, $offset1);
         }
 
         $string->readWhiteSpaces();
         if ($string->readIf('{'))
         {
-            $inner = new StringReader($string->readRange('{', '}', $this->escapes));
+            $line = $string->getLine();
+            $index = $string->getIndex();
+            $inner = new StringReader(
+                $string->readRange('{', '}', $this->escapes),
+                $string->fileName,
+                $string,
+                $line,
+                $index,
+            );
             $tokens = $this->parseComponentInner($inner);
 
-            return new Tokens\_ComponentToken($name, $props, $tokens);
+            return new Tokens\_ComponentToken($string, $start, $string->offset, $name, $props, $tokens);
         }
         else
         {
-            throw new SyntaxError("Expected '{'");
+            $string->syntaxError("Expected '{'");
         }
     }
 
-    public function parseComponentProps(StringReader $string) : array
+    public function parseComponentProps(StringReader $string, int $start) : array
     {
         $props = [];
         $string->readWhiteSpaces();
@@ -96,10 +113,10 @@ class Tokenizer implements TokenizerContract
             {
                 if (!$name = $string->readCWord())
                 {
-                    throw new SyntaxError("Expected prop name");
+                    $string->syntaxError("Expected prop name");
                 }
             }
-            else throw new SyntaxError("Expected prop name");
+            else $string->syntaxError("Expected prop name");
 
             $string->readWhiteSpaces();
 
@@ -114,10 +131,10 @@ class Tokenizer implements TokenizerContract
 
             if (!$string->end() && !$string->readIf(','))
             {
-                throw new SyntaxError("Expected ','");
+                $string->syntaxError("Expected ','");
             }
 
-            $props[] = new Tokens\_ComponentPropToken($name, $default);
+            $props[] = new Tokens\_ComponentPropToken($string, $start, $string->offset, $name, $default);
 
             $string->readWhiteSpaces();
         }
@@ -132,24 +149,25 @@ class Tokenizer implements TokenizerContract
         $string->readWhiteSpaces();
         while (!$string->end())
         {
+            $offset1 = $string->offset;
             $word = $string->readCWord();
 
             switch ($word)
             {
                 case 'render':
-                    $tokens[] = $this->parseRender($string);
+                    $tokens[] = $this->parseRender($string, $offset1);
                     break;
 
                 case 'slot':
-                    $tokens[] = $this->parseSlot($string);
+                    $tokens[] = $this->parseSlot($string, $offset1);
                     break;
 
                 case 'state':
-                    $tokens[] = $this->parseState($string);
+                    $tokens[] = $this->parseState($string, $offset1);
                     break;
 
                 default:
-                    throw new SyntaxError("Unexpected symbol [$word]");
+                    $string->syntaxError("Unexpected symbol [$word]");
             }
 
             $string->readWhiteSpaces();
@@ -158,25 +176,33 @@ class Tokenizer implements TokenizerContract
         return $tokens;
     }
 
-    public function parseRender(StringReader $string) : Tokens\_ComponentRenderToken
+    public function parseRender(StringReader $string, int $start) : Tokens\_ComponentRenderToken
     {
         $string->readWhiteSpaces();
         if ($string->readIf('{'))
         {
-            $inner = new StringReader($string->readRange('{', '}', $this->escapes));
+            $line = $string->getLine();
+            $index = $string->getIndex();
+            $inner = new StringReader(
+                $string->readRange('{', '}', $this->escapes),
+                $string->fileName,
+                $string,
+                $line,
+                $index,
+            );
 
             $htmlX = new \StackWeb\Compilers\HtmlX\Tokenizer($inner);
             $htmlX->parse();
 
-            return new Tokens\_ComponentRenderToken($htmlX->getTokens());
+            return new Tokens\_ComponentRenderToken($string, $start, $string->offset, $htmlX->getTokens());
         }
         else
         {
-            throw new SyntaxError("Expected '{'");
+            $string->syntaxError("Expected '{'");
         }
     }
 
-    public function parseSlot(StringReader $string) : Tokens\_ComponentSlotToken
+    public function parseSlot(StringReader $string, int $start) : Tokens\_ComponentSlotToken
     {
         $string->readWhiteSpaces();
         if ($string->readIf('$') && $name = $string->readCWord())
@@ -185,7 +211,15 @@ class Tokenizer implements TokenizerContract
             $default = null;
             if ($string->readIf('{'))
             {
-                $inner = new StringReader($string->readRange('{', '}', $this->escapes));
+                $line = $string->getLine();
+                $index = $string->getIndex();
+                $inner = new StringReader(
+                    $string->readRange('{', '}', $this->escapes),
+                    $string->fileName,
+                    $string,
+                    $line,
+                    $index,
+                );
 
                 $htmlX = new \StackWeb\Compilers\HtmlX\Tokenizer($inner);
                 $htmlX->parse();
@@ -193,15 +227,15 @@ class Tokenizer implements TokenizerContract
                 $default = $htmlX->getTokens();
             }
 
-            return new Tokens\_ComponentSlotToken($name, $default);
+            return new Tokens\_ComponentSlotToken($string, $start, $string->offset, $name, $default);
         }
         else
         {
-            throw new SyntaxError("Expected slot name");
+            $string->syntaxError("Expected slot name");
         }
     }
 
-    public function parseState(StringReader $string) : Tokens\_ComponentStateToken
+    public function parseState(StringReader $string, int $start) : Tokens\_ComponentStateToken
     {
         $string->readWhiteSpaces();
         if ($string->readIf('$') && $name = $string->readCWord())
@@ -221,15 +255,15 @@ class Tokenizer implements TokenizerContract
                 }
                 else
                 {
-                    throw new SyntaxError("This syntax coming soon..."); // state $x = 0
+                    $string->syntaxError("This syntax coming soon..."); // state $x = 0
                 }
             }
 
-            return new Tokens\_ComponentStateToken($name, $default);
+            return new Tokens\_ComponentStateToken($string, $start, $string->offset, $name, $default);
         }
         else
         {
-            throw new SyntaxError("Expected slot name");
+            $string->syntaxError("Expected slot name");
         }
     }
 

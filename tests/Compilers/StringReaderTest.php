@@ -3,6 +3,7 @@
 namespace StackWeb\Tests\Compilers;
 
 use StackWeb\Compilers\StringReader;
+use StackWeb\Compilers\SyntaxError;
 use StackWeb\Tests\TestCase;
 
 class StringReaderTest extends TestCase
@@ -10,7 +11,7 @@ class StringReaderTest extends TestCase
 
     public function test_read()
     {
-        $string = new StringReader("Hello World");
+        $string = new StringReader("Hello World", 'test');
 
         $this->assertSame('H', $string->read());
         $this->assertSame('e', $string->read());
@@ -29,7 +30,7 @@ class StringReaderTest extends TestCase
 
     public function test_simple_read_while()
     {
-        $string = new StringReader("1234,56789");
+        $string = new StringReader("1234,56789", 'test');
 
         $res = $string->readWhile(
             fn ($value) => is_numeric($value),
@@ -62,7 +63,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_while_steps()
     {
-        $string = new StringReader("12345,9-5!");
+        $string = new StringReader("12345,9-5!", 'test');
 
         $res = $string->readWhile(
             fn ($value) => is_numeric($value),
@@ -80,7 +81,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_while_jumps()
     {
-        $string = new StringReader("12345,9-!");
+        $string = new StringReader("12345,9-!", 'test');
 
         $res = $string->readWhile(
             fn ($value) => is_numeric($value),
@@ -99,7 +100,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_while_options()
     {
-        $string = new StringReader("12,34");
+        $string = new StringReader("12,34", 'test');
 
         $res = $string->readWhile(
             fn ($value) => is_numeric($value),
@@ -112,7 +113,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_while_dont_include()
     {
-        $string = new StringReader("12.34,56");
+        $string = new StringReader("12.34,56", 'test');
 
         $res = $string->readWhile(
             function ($value)
@@ -137,7 +138,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_while_replace_with()
     {
-        $string = new StringReader("12.34,56");
+        $string = new StringReader("12.34,56", 'test');
 
         $res = $string->readWhile(
             function ($value)
@@ -163,7 +164,7 @@ class StringReaderTest extends TestCase
 
     public function test_simple_read_until()
     {
-        $string = new StringReader("1234,56789");
+        $string = new StringReader("1234,56789", 'test');
 
         $res = $string->readUntil(
             fn ($value) => $value == ',',
@@ -196,7 +197,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_until_dont_include()
     {
-        $string = new StringReader("12.34,56");
+        $string = new StringReader("12.34,56", 'test');
 
         $res = $string->readUntil(
             function ($value)
@@ -221,7 +222,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_until_replace_with()
     {
-        $string = new StringReader("12.34,56");
+        $string = new StringReader("12.34,56", 'test');
 
         $res = $string->readUntil(
             function ($value)
@@ -246,7 +247,7 @@ class StringReaderTest extends TestCase
 
     public function test_silent_process()
     {
-        $string = new StringReader("Hello World");
+        $string = new StringReader("Hello World", 'test');
         $string->offset = 6;
 
         $read = $string->silent(fn() => $string->read(100));
@@ -257,10 +258,10 @@ class StringReaderTest extends TestCase
 
     public function test_read_escape()
     {
-        $string = new StringReader('Hi"');
+        $string = new StringReader('Hi"', 'test');
         $this->assertSame('Hi', $string->readEscape('"'));
 
-        $string = new StringReader('Hi\\" Foo \\n Bar " Exclude');
+        $string = new StringReader('Hi\\" Foo \\n Bar " Exclude', 'test');
         $this->assertSame('Hi\\" Foo \\n Bar ', $string->readEscape('"'));
 
         $string->offset = 0;
@@ -269,41 +270,41 @@ class StringReaderTest extends TestCase
 
     public function test_read_range()
     {
-        $string = new StringReader('Range}');
+        $string = new StringReader('Range}', 'test');
         $this->assertSame('Range', $string->readRange('{', '}'));
 
-        $string = new StringReader('Range {Deep} }');
+        $string = new StringReader('Range {Deep} }', 'test');
         $this->assertSame('Range {Deep} ', $string->readRange('{', '}'));
 
-        $string = new StringReader('Range {Deep "String}}" } "String}}" }');
+        $string = new StringReader('Range {Deep "String}}" } "String}}" }', 'test');
         $this->assertSame('Range {Deep "String}}" } "String}}" ', $string->readRange('{', '}', ['"']));
 
         // Without escapes:
         $string->offset = 0;
         $this->assertSame('Range {Deep "String}', $string->readRange('{', '}'));
 
-        $string = new StringReader('This {Is "A }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} }');
+        $string = new StringReader('This {Is "A }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} }', 'test');
         $this->assertSame('This {Is "A }\\"} So}"} "Complex } \\"} String} {}" ! {Amazing} ', $string->readRange('{', '}', ['"']));
     }
 
     public function test_read_trig()
     {
-        $string = new StringReader('A,B');
+        $string = new StringReader('A,B', 'test');
         $this->assertSame('A', $string->readTrig(','));
 
-        $string = new StringReader('A "S,T,R" B,');
+        $string = new StringReader('A "S,T,R" B,', 'test');
         $this->assertSame('A "S,T,R" B', $string->readTrig(',', ['"']));
 
         $string->offset = 0;
         $this->assertSame('A "S', $string->readTrig(','));
 
-        $string = new StringReader('Foo { ,, } "," { "," } ,');
+        $string = new StringReader('Foo { ,, } "," { "," } ,', 'test');
         $this->assertSame('Foo { ,, } "," { "," } ', $string->readTrig(',', ['"'], [['{', '}', ['"']]]));
     }
 
     public function test_white_spaces()
     {
-        $string = new StringReader(" \r\n\tA");
+        $string = new StringReader(" \r\n\tA", 'test');
         $string->readWhiteSpaces();
 
         $this->assertSame('A', $string->read());
@@ -311,7 +312,7 @@ class StringReaderTest extends TestCase
 
     public function test_read_if()
     {
-        $string = new StringReader("Foo Bar");
+        $string = new StringReader("Foo Bar", 'test');
 
         $this->assertSame('F', $string->readIf('F'));
         $this->assertSame(1, $string->offset);
@@ -324,6 +325,41 @@ class StringReaderTest extends TestCase
 
         $this->assertSame(' Bar', $string->readIf(['Foo', ' Bar']));
         $this->assertSame(7, $string->offset);
+    }
+
+    public function test_line_detection()
+    {
+        $string = new StringReader("A\nB\nC", 'test');
+
+        $this->assertSame(1, $string->getLine());
+
+        $string->offset = 1;
+        $this->assertSame(1, $string->getLine());
+
+        $string->offset = 2;
+        $this->assertSame(2, $string->getLine());
+
+        $string->offset = 9999;
+        $this->assertSame(3, $string->getLine());
+    }
+
+    public function test_relative_line_detection()
+    {
+        $string = new StringReader("A\nB", 'test', startLine: 99);
+
+        $string->offset = 2;
+        $this->assertSame(100, $string->getLine());
+    }
+
+    public function test_syntax_error()
+    {
+        $string = new StringReader("A\nB", 'test');
+
+        $string->offset = 2;
+        $this->expectException(SyntaxError::class);
+        $this->expectExceptionMessage("Syntax Error: Foo in [test] on line 2");
+
+        $string->syntaxError('Foo');
     }
 
 }

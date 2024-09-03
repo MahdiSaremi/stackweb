@@ -6,7 +6,6 @@ use StackWeb\Compilers\ApiPhp\ApiPhpStaticTokenizer;
 use StackWeb\Compilers\CliPhp\CliPhpStaticTokenizer;
 use StackWeb\Compilers\Contracts\Tokenizer as TokenizerContract;
 use StackWeb\Compilers\StringReader;
-use StackWeb\Compilers\SyntaxError;
 
 class Tokenizer implements TokenizerContract
 {
@@ -24,32 +23,42 @@ class Tokenizer implements TokenizerContract
         $pre = $this->preParse();
 
         $tokens = [];
+        /** @var Tokens\_PreToken $preToken */
         foreach ($pre as $preToken)
         {
-            if (is_string($preToken) || $preToken instanceof Tokens\_PropValue)
+            if ($preToken->type == 'text')
             {
-                $tokens[] = new Tokens\_DomText($preToken);
+                $tokens[] = new Tokens\_DomText($preToken->reader, $preToken->startOffset, $preToken->endOffset, $preToken->content);
             }
-            elseif ($preToken[0] == 'open')
+            elseif ($preToken->type == 'open')
             {
-                [, $name, $selfClose, $props] = $preToken;
-                $tokens[] = new Tokens\_DomToken($name, $props, $selfClose, null);
+                $tokens[] = new Tokens\_DomToken(
+                    $preToken->reader,
+                    $preToken->startOffset,
+                    $preToken->endOffset,
+                    $preToken->content,
+                    $preToken->props,
+                    $preToken->selfClose,
+                    null
+                );
             }
-            elseif ($preToken[0] == 'close')
+            elseif ($preToken->type == 'close')
             {
-                [, $name] = $preToken;
                 for ($i = count($tokens) - 1; $i >= 0; $i--)
                 {
                     if (
                         $tokens[$i] instanceof Tokens\_DomToken &&
                         !$tokens[$i]->selfClose &&
                         $tokens[$i]->inner === null &&
-                        $tokens[$i]->name == $name
+                        $tokens[$i]->name == $preToken->content
                     )
                     {
                         $cur = $tokens[$i];
                         $inner = array_splice($tokens, $i + 1);
                         $tokens[$i] = new Tokens\_DomToken(
+                            $cur->reader,
+                            $cur->startOffset,
+                            $cur->endOffset,
                             $cur->name,
                             $cur->props,
                             false,
@@ -73,6 +82,7 @@ class Tokenizer implements TokenizerContract
         $this->readWhiteSpaces($string, $tokens);
         while (!$string->end())
         {
+            $offset1 = $string->offset;
             $read = $string->read();
 
             if ($read == '<')
@@ -84,42 +94,42 @@ class Tokenizer implements TokenizerContract
                         $string->readWhiteSpaces();
                         if ($string->readIf('>'))
                         {
-                            $tokens[] = ['close', $tag];
+                            $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'close', $tag);
                         }
                         else
                         {
-                            throw new SyntaxError("Expected '>'");
+                            $string->syntaxError("Expected '>'");
                         }
                     }
                     else
                     {
-                        $this->appendText($tokens, $read . $tag);
+                        $this->appendText($string, $tokens, $read . $tag);
                     }
                 }
                 elseif ($tag = $string->readHWord())
                 {
                     [$props, $selfClose] = $this->parseProps($string);
-                    $tokens[] = ['open', $tag, $selfClose, $props];
+                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'open', $tag, $selfClose, $props);
                 }
                 else
                 {
-                    $this->appendText($tokens, $read . $tag);
+                    $this->appendText($string, $tokens, $read . $tag);
                 }
             }
             elseif ($read === '{')
             {
                 if ($string->readIf('{'))
                 {
-                    $tokens[] = ApiPhpStaticTokenizer::read($string);
+                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'text', ApiPhpStaticTokenizer::read($string));
                 }
                 else
                 {
-                    $tokens[] = CliPhpStaticTokenizer::read($string);
+                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'text', CliPhpStaticTokenizer::read($string));
                 }
             }
             else
             {
-                $this->appendText($tokens, $read);
+                $this->appendText($string, $tokens, $read);
             }
 
             $this->readWhiteSpaces($string, $tokens);
@@ -135,6 +145,7 @@ class Tokenizer implements TokenizerContract
         $string->readWhiteSpaces();
         while (!$string->end())
         {
+            $start = $string->offset;
             $name = $string->readHWord();
 
             if ($name === '')
@@ -173,7 +184,7 @@ class Tokenizer implements TokenizerContract
                     }
                     else
                     {
-                        throw new SyntaxError("Expected ' or \" ");
+                        $string->syntaxError("Expected ' or \" ");
                     }
                 }
                 else
@@ -181,7 +192,7 @@ class Tokenizer implements TokenizerContract
                     $value = true;
                 }
 
-                $props[] = new Tokens\_PropToken($name, $value);
+                $props[] = new Tokens\_PropToken($string, $start, $string->offset, $name, $value);
             }
             elseif ($string->readIf('/>'))
             {
@@ -193,24 +204,25 @@ class Tokenizer implements TokenizerContract
             }
             else
             {
-                throw new SyntaxError("Expected prop name");
+                $string->syntaxError("Expected '>'");
             }
 
             $string->readWhiteSpaces();
         }
 
-        throw new SyntaxError("Expected '>'");
+        $string->syntaxError("Expected '>'");
     }
 
-    public function appendText(array &$tokens, string $text)
+    public function appendText(StringReader $string, array &$tokens, string $text)
     {
-        if ($tokens && is_string(end($tokens)))
+        if ($tokens && end($tokens)->type == 'text')
         {
-            $tokens[count($tokens) - 1] .= $text;
+            end($tokens)->content .= $text;
+            end($tokens)->endOffset = $string->offset;
         }
         else
         {
-            $tokens[] = $text;
+            $tokens[] = new Tokens\_PreToken($string, $string->offset - strlen($text), $string->offset, 'text', $text);
         }
     }
 
@@ -218,7 +230,7 @@ class Tokenizer implements TokenizerContract
     {
         if ($string->readWhiteSpaces())
         {
-            $this->appendText($tokens, ' ');
+            $this->appendText($string, $tokens, ' ');
         }
     }
 

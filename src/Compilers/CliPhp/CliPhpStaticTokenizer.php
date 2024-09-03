@@ -12,9 +12,10 @@ class CliPhpStaticTokenizer
 
     public static function read(StringReader $string): Tokens\_CliPhpToken
     {
+        $offset1 = $string->offset;
         $php = $string->readRange('{', '}', self::$escapes);
 
-        return new Tokens\_CliPhpToken($php);
+        return new Tokens\_CliPhpToken($string, $offset1, $string->offset, $php);
     }
 
 }

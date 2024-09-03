@@ -13,12 +13,27 @@ class StringReader
     public int          $offset = 0;
     public readonly int $length;
 
+    public readonly array $lineIndexInfo;
+
     public function __construct(
         public readonly string $content,
+        public readonly string $fileName,
+        public readonly ?StringReader $parent = null,
+        public readonly int $startLine = 1,
+        public readonly int $startIndex = 0,
     )
     {
         $this->length = strlen($this->content);
+
+        $lineIndexInfo = [];
+        foreach (str_split($this->content) as $i => $char)
+        {
+            if ($char == "\n") $lineIndexInfo[] = $i;
+        }
+        $this->lineIndexInfo = $lineIndexInfo;
     }
+
+
 
     public function end() : bool
     {
@@ -377,6 +392,52 @@ class StringReader
         $this->offset = $offset;
 
         return $result;
+    }
+
+
+    public function getLine()
+    {
+        if (!$this->lineIndexInfo)
+        {
+            return $this->startLine;
+        }
+
+        foreach ($this->lineIndexInfo as $line => $index)
+        {
+            if ($index >= $this->offset)
+            {
+                return $line + $this->startLine;
+            }
+        }
+
+        return count($this->lineIndexInfo) + $this->startLine;
+    }
+
+    public function getIndex()
+    {
+        return $this->offset + $this->startIndex;
+    }
+
+    public function getSuperParent()
+    {
+        $ptr = $this;
+        while ($ptr->parent) $ptr = $ptr->parent;
+
+        return $ptr;
+    }
+
+    public function syntaxError(string $message, int $offset = 0)
+    {
+        $this->offset += $offset;
+        $line = $this->getLine();
+        // $index = $this->getIndex();
+        $this->offset -= $offset;
+
+        $super = $this->getSuperParent();
+
+        throw new SyntaxError(
+            sprintf("Syntax Error: %s in [%s] on line %s", $message, $super->fileName, $line),
+        );
     }
 
 }

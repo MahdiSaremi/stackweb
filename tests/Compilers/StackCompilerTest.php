@@ -11,6 +11,8 @@ class StackCompilerTest extends TestCase
 
     public function test_1()
     {
+        $startAt = microtime(true);
+
         $tokenizer = new Tokenizer(new StringReader(
             <<<'Stack'
             component Counter ($foo = null, $bar) {
@@ -24,10 +26,15 @@ class StackCompilerTest extends TestCase
                     <div>Hello</div>
                 }
             }
-            Stack
+            Stack,
+            'test'
         ));
 
         $tokenizer->parse();
+
+        $endAt = microtime(true);
+        echo "Process in " . round(($endAt-$startAt)*1000, 3) . "ms\n";
+
         dd($tokenizer->getTokens());
     }
 

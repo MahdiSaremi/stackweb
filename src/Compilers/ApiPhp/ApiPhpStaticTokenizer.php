@@ -12,15 +12,16 @@ class ApiPhpStaticTokenizer
 
     public static function read(StringReader $string): Tokens\_ApiPhpToken
     {
+        $offset1 = $string->offset;
         $php = $string->readRange('{', '}', self::$escapes);
 
         if ($string->readIf('}'))
         {
-            return new Tokens\_ApiPhpToken($php);
+            return new Tokens\_ApiPhpToken($string, $offset1, $string->offset, $php);
         }
         else
         {
-            throw new SyntaxError("Expected '}}', given '}'");
+            $string->syntaxError("Expected '}}'");
         }
     }
 
