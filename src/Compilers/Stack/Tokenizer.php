@@ -2,6 +2,8 @@
 
 namespace StackWeb\Compilers\Stack;
 
+use StackWeb\Compilers\ApiPhp\ApiPhpStaticTokenizer;
+use StackWeb\Compilers\CliPhp\CliPhpStaticTokenizer;
 use StackWeb\Compilers\Contracts\Tokenizer as TokenizerContract;
 use StackWeb\Compilers\StringReader;
 use StackWeb\Compilers\SyntaxError;
@@ -142,6 +144,10 @@ class Tokenizer implements TokenizerContract
                     $tokens[] = $this->parseSlot($string);
                     break;
 
+                case 'state':
+                    $tokens[] = $this->parseState($string);
+                    break;
+
                 default:
                     throw new SyntaxError("Unexpected symbol [$word]");
             }
@@ -188,6 +194,38 @@ class Tokenizer implements TokenizerContract
             }
 
             return new Tokens\_ComponentSlotToken($name, $default);
+        }
+        else
+        {
+            throw new SyntaxError("Expected slot name");
+        }
+    }
+
+    public function parseState(StringReader $string) : Tokens\_ComponentStateToken
+    {
+        $string->readWhiteSpaces();
+        if ($string->readIf('$') && $name = $string->readCWord())
+        {
+            $string->readWhiteSpaces();
+            $default = null;
+            if ($string->readIf('='))
+            {
+                $string->readWhiteSpaces();
+                if ($string->readIf('{{'))
+                {
+                    $default = ApiPhpStaticTokenizer::read($string);
+                }
+                elseif ($string->readIf('{'))
+                {
+                    $default = CliPhpStaticTokenizer::read($string);
+                }
+                else
+                {
+                    throw new SyntaxError("This syntax coming soon..."); // state $x = 0
+                }
+            }
+
+            return new Tokens\_ComponentStateToken($name, $default);
         }
         else
         {
