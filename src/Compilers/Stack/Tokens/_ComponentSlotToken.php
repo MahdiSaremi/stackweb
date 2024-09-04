@@ -16,7 +16,7 @@ readonly class _ComponentSlotToken implements Token
         public int $endOffset,
 
         public string $name,
-        public array $default,
+        public ?array $default,
     )
     {
     }

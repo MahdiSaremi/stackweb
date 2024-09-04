@@ -22,4 +22,14 @@ trait TokenTrait
         return $this->endOffset;
     }
 
+    public function getInfo() : array
+    {
+        return [$this->getReader(), $this->getStartOffset(), $this->getEndOffset()];
+    }
+
+    public function syntaxError(string $message)
+    {
+        $this->getReader()->syntaxErrorOn($this, $message);
+    }
+
 }

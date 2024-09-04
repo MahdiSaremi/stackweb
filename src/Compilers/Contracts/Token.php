@@ -13,4 +13,6 @@ interface Token
 
     public function getEndOffset() : int;
 
+    public function syntaxError(string $message);
+
 }

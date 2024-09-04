@@ -7,6 +7,6 @@ interface Parser
 
     public function parse() : void;
 
-    public function getStructs() : array;
+    public function getStruct() : Token;
 
 }

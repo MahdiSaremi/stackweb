@@ -19,8 +19,8 @@ class _DomStruct implements Token, _Node
         public string|Value $name,
         /** @var _DomPropStruct[] */
         public array $props,
-        /** @var _Node[] */
-        public array $slot,
+        /** @var null|_Node[] */
+        public ?array $slot,
 
         public ?_Node $parent,
     )

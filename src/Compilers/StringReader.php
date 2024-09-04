@@ -3,6 +3,7 @@
 namespace StackWeb\Compilers;
 
 use Closure;
+use StackWeb\Compilers\Contracts\Token;
 
 class StringReader
 {
@@ -434,6 +435,20 @@ class StringReader
         $this->offset -= $offset;
 
         $super = $this->getSuperParent();
+
+        throw new SyntaxError(
+            sprintf("Syntax Error: %s in [%s] on line %s", $message, $super->fileName, $line),
+        );
+    }
+
+    public function syntaxErrorOn(Token $token, string $message)
+    {
+        $super = $this->getSuperParent();
+        [$line, $index] = $super->silent(function () use ($super, $token)
+        {
+            $super->offset = $token->getStartOffset();
+            return [$super->getLine(), $super->getIndex()];
+        });
 
         throw new SyntaxError(
             sprintf("Syntax Error: %s in [%s] on line %s", $message, $super->fileName, $line),

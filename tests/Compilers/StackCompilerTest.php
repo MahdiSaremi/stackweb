@@ -2,6 +2,7 @@
 
 namespace StackWeb\Tests\Compilers;
 
+use StackWeb\Compilers\Stack\StackParser;
 use StackWeb\Compilers\Stack\Tokenizer;
 use StackWeb\Compilers\StringReader;
 use StackWeb\Tests\TestCase;
@@ -13,7 +14,7 @@ class StackCompilerTest extends TestCase
     {
         $startAt = microtime(true);
 
-        $tokenizer = new Tokenizer(new StringReader(
+        $tokenizer = StackParser::from(new StringReader(
             <<<'Stack'
             component Counter ($foo = null, $bar) {
                 slot $icon {
@@ -35,7 +36,7 @@ class StackCompilerTest extends TestCase
         $endAt = microtime(true);
         echo "Process in " . round(($endAt-$startAt)*1000, 3) . "ms\n";
 
-        dd($tokenizer->getTokens());
+        dd($tokenizer->getStruct());
     }
 
 }

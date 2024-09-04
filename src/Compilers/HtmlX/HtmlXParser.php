@@ -2,70 +2,105 @@
 
 namespace StackWeb\Compilers\HtmlX;
 
+use StackWeb\Compilers\ApiPhp\ApiPhpParser;
+use StackWeb\Compilers\ApiPhp\Tokens\_ApiPhpToken;
+use StackWeb\Compilers\CliPhp\CliPhpParser;
+use StackWeb\Compilers\CliPhp\Tokens\_CliPhpToken;
 use StackWeb\Compilers\Contracts\Parser;
 use StackWeb\Compilers\Contracts\Token;
+use StackWeb\Compilers\HtmlX\Structs\_HtmlXStruct;
+use StackWeb\Compilers\HtmlX\Structs\_Node;
 use StackWeb\Compilers\StringReader;
 
 class HtmlXParser implements Parser
 {
 
-    public array $structs;
+    public array $nodes;
 
     public function __construct(
+        public readonly Token $base,
         public readonly array $tokens,
     )
     {
     }
 
-    public static function fromReader(StringReader $string)
-    {
-        $tokenizer = new Tokenizer($string);
-        $tokenizer->parse();
-
-        return new static($tokenizer->getTokens());
-    }
-
     public function parse() : void
     {
-        foreach ($this->tokens as $token)
-        {
-
-        }
+        $this->nodes = $this->convertNodes($this->tokens);
     }
 
-    public function convertNodes(array $tokens) : array
+    public function convertNodes(array $tokens, ?_Node $parent = null) : array
     {
-        $new = [];
+        $nodes = [];
         foreach ($tokens as $token)
         {
             if ($token instanceof Tokens\_DomToken)
             {
+                $props = [];
                 foreach ($token->props as $prop)
                 {
-                    $prop = $this->convertValue($prop);.....
+                    $props[] = new Structs\_DomPropStruct(
+                        $prop->reader,
+                        $prop->startOffset,
+                        $prop->endOffset,
+                        $this->convertValue($prop->name),
+                        $this->convertValue($prop->value),
+                    );
                 }
 
-                $new[] = new Structs\_DomStruct(
-                    $token->reader,
-                    $token->startOffset,
-                    $token->endOffset,
+                $node = new Structs\_DomStruct(
+                    $token->reader, $token->startOffset, $token->endOffset,
                     $this->convertValue($token->name),
-                    $this->convertProps($token->props),
+                    $props,
+                    null,
+                    $parent,
                 );
+
+                $node->slot = isset($token->inner) ? $this->convertNodes($token->inner, $node) : null;
+
+                $nodes[] = $node;
+            }
+            elseif ($token instanceof Tokens\_DomText)
+            {
+                $nodes[] = new Structs\_TextStruct(
+                    $token->reader, $token->startOffset, $token->endOffset,
+                    $this->convertValue($token->value),
+                    $parent,
+                );
+            }
+            else
+            {
+                $token->syntaxError("Unknown token");
             }
         }
 
-        return $new;
+        return $nodes;
     }
 
-    public function convert(Token $token)
+    public function convertValue(mixed $value)
     {
+        if ($value instanceof _ApiPhpToken)
+        {
+            $parser = new ApiPhpParser($value);
+            $parser->parse();
+            return $parser->getStruct();
+        }
+        elseif ($value instanceof _CliPhpToken)
+        {
+            $parser = new CliPhpParser($value);
+            $parser->parse();
+            return $parser->getStruct();
+        }
 
+        return $value;
     }
 
-    public function getStructs() : array
+    public function getStruct() : Token
     {
-        // TODO: Implement getStructs() method.
+        return new _HtmlXStruct(
+            $this->base->getReader(), $this->base->getStartOffset(), $this->base->getEndOffset(),
+            $this->nodes,
+        );
     }
 
 }
