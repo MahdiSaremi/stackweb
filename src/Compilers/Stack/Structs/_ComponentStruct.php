@@ -17,11 +17,14 @@ class _ComponentStruct implements Token
         public int $endOffset,
 
         public string $name,
+        /** @var _ComponentPropStruct[] */
         public array $props,
+        /** @var _ComponentSlotStruct[] */
         public array $slots,
+        /** @var _ComponentStateStruct[] */
         public array $states,
 
-        public ?_HtmlXStruct $render,
+        public _HtmlXStruct $render,
     )
     {
     }

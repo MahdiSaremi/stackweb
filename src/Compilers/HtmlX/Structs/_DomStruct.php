@@ -37,20 +37,49 @@ class _DomStruct implements Token, _Node
         return $this->parent;
     }
 
+    protected bool $isNameStatic;
+
+    public function isNameStatic() : bool
+    {
+        if (!isset($this->isNameStatic))
+        {
+            $this->isNameStatic = is_string($this->name);
+        }
+
+        return $this->isNameStatic;
+    }
+
+    protected bool $isPropsStatic;
+
+    public function isPropsStatic() : bool
+    {
+        if (!isset($this->isPropsStatic))
+        {
+            $this->isPropsStatic = true;
+            foreach ($this->props as $prop)
+            {
+                if (!$prop->isStatic())
+                {
+                    return $this->isPropsStatic = false;
+                }
+            }
+        }
+
+        return $this->isPropsStatic;
+    }
+
     protected bool $isStatic;
 
     public function isStatic() : bool
     {
         if (!isset($this->isStatic))
         {
-            $this->isStatic = true;
-            foreach ($this->props as $prop)
+            if (!$this->isNameStatic() || !$this->isPropsStatic())
             {
-                if (!$prop->isStatic())
-                {
-                    return $this->isStatic = false;
-                }
+                return $this->isStatic = false;
             }
+
+            $this->isStatic = true;
             foreach ($this->slot as $child)
             {
                 if (!$child->isStatic())
@@ -62,4 +91,5 @@ class _DomStruct implements Token, _Node
 
         return $this->isStatic;
     }
+
 }
