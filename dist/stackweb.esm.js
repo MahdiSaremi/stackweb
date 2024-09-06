@@ -226,9 +226,9 @@ var Invoke = class extends Entity {
         changed = true;
         this.slots = other.slots;
       }
-      if (JSON.stringify(this.attrs) !== JSON.stringify(other.attrs)) {
+      if (JSON.stringify(this.props) !== JSON.stringify(other.attrs)) {
         changed = true;
-        this.attrs = other.attrs;
+        this.props = other.attrs;
       }
       if (changed) {
         this.content.morph(other.component.source.slot(this));
@@ -255,14 +255,14 @@ var Invoke = class extends Entity {
     return this.slots[name];
   }
   getProp(name) {
-    return this.attrs[name];
+    return this.props[name];
   }
   get(name) {
     if (this.states[name] !== void 0) {
       return this.states[name];
     }
-    if (this.attrs[name] !== void 0) {
-      return this.attrs[name];
+    if (this.props[name] !== void 0) {
+      return this.props[name];
     }
     if (this.slots[name] !== void 0) {
       return this.slots[name];

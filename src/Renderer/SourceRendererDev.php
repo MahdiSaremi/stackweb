@@ -19,6 +19,7 @@ use StackWeb\Compilers\StringReader;
 use StackWeb\Renderer\Builder\SourceBuilder;
 use StackWeb\Renderer\Builder\StringBuilder;
 use StackWeb\Renderer\Contracts\SourceRenderer;
+use StackWeb\Renderer\Scope\ComponentScope;
 
 class SourceRendererDev implements SourceRenderer
 {
@@ -31,7 +32,7 @@ class SourceRendererDev implements SourceRenderer
 
     public function renderStack(SourceBuilder $out, _StackStruct $stack) : void
     {
-        $out->append("Component::export([\n");
+        $out->append("\StackWeb\StackWeb::export([\n");
         foreach ($stack->components as $component)
         {
             $out->appendObject($component->name);
@@ -44,9 +45,17 @@ class SourceRendererDev implements SourceRenderer
         $out->append("]);");
     }
 
+    protected ComponentScope $componentScope;
+
+    public function getComponentScope() : ComponentScope
+    {
+        return $this->componentScope;
+    }
+
     public function renderComponent(SourceBuilder $out, _ComponentStruct $component) : void
     {
-        $out->append("Component::make()\n");
+        $this->componentScope = new ComponentScope($this, $component);
+        $out->append("\StackWeb\Foundation\Component::make()\n");
 
         $this->renderComponentProps($out, $component);
         $this->renderComponentSlots($out, $component);
@@ -54,7 +63,11 @@ class SourceRendererDev implements SourceRenderer
 
         $this->renderComponentRenderApi($out, $component);
         $this->renderComponentRenderCli($out, $component);
+
+        $this->renderComponentApiResults($out, $component);
+        unset($this->componentScope);
     }
+
 
     public function renderComponentStates(SourceBuilder $out, _ComponentStruct $component) : void
     {
@@ -108,6 +121,19 @@ class SourceRendererDev implements SourceRenderer
             PhpRenderer::render($slot->name),
             'null', // $this->value($state->default),
         ));
+    }
+
+    public function renderComponentApiResults(SourceBuilder $out, _ComponentStruct $component)
+    {
+        $out->append("->apiResults([\n");
+        foreach ($this->componentScope->getApiResults() as $value => $id)
+        {
+            $out->appendObject($id);
+            $out->append(" => fn() => (");
+            $out->append($this->value($value));
+            $out->append("),\n");
+        }
+        $out->append("])\n");
     }
 
     public function value(mixed $value) : string
@@ -256,6 +282,13 @@ class SourceRendererDev implements SourceRenderer
             $out->append(", ");
         }
         $out->append("}");
+    }
+
+    public function renderCliGetApiResult(StringBuilder $out, _ApiPhpStruct $value)
+    {
+        $out->append("$.getApiResult(");
+        $this->renderValueCli($out, $this->getComponentScope()->apiResult($value));
+        $out->append(")");
     }
 
 }

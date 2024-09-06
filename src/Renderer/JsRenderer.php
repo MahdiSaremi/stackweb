@@ -105,7 +105,7 @@ class JsRenderer
         }
         elseif ($object instanceof _ApiPhpStruct)
         {
-            $out->appendCode($object->php);
+            $renderer->renderCliGetApiResult($out, $object);
         }
         else
         {

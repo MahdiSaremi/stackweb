@@ -1,6 +1,6 @@
 <?php
 
-namespace StackWeb\Builder;
+namespace StackWeb\Foundation;
 
 class Stack
 {
@@ -16,7 +16,7 @@ class Stack
         return array_key_exists($name, $this->components);
     }
 
-    public function get(string $name)
+    public function get(string $name) : ?Component
     {
         if (!$this->has($name)) return null;
 
@@ -26,6 +26,11 @@ class Stack
         }
 
         return $this->components[$name];
+    }
+
+    public function create(string $name) : ?ComponentContainer
+    {
+        return $this->get($name)?->create();
     }
 
 }

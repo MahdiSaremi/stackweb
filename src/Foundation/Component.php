@@ -1,6 +1,6 @@
 <?php
 
-namespace StackWeb\Builder;
+namespace StackWeb\Foundation;
 
 class Component
 {
@@ -10,7 +10,7 @@ class Component
         return new static;
     }
 
-    protected array $props = [];
+    public array $props = [];
 
     public function prop(string $name, $default, $defaultJs)
     {
@@ -18,7 +18,7 @@ class Component
         return $this;
     }
 
-    protected array $states = [];
+    public array $states = [];
 
     public function state(string $name, $default, $defaultJs)
     {
@@ -26,7 +26,7 @@ class Component
         return $this;
     }
 
-    protected array $slots = [];
+    public array $slots = [];
 
     public function slot(string $name, $default, $defaultJs)
     {
@@ -34,14 +34,20 @@ class Component
         return $this;
     }
 
-    protected $render;
-    protected $renderJs;
+    public $render;
+    public $renderJs;
 
     public function render($callback, $js)
     {
         $this->render = $callback;
         $this->renderJs = $js;
         return $this;
+    }
+
+
+    public function create()
+    {
+        return new ComponentContainer($this);
     }
 
 }

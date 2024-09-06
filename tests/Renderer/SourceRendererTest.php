@@ -25,7 +25,7 @@ class SourceRendererTest extends TestCase
                 state $count = { 0 }
             
                 render {
-                    <div>Hello {{ $count }}</div>
+                    <div>Hello {{ $this->count }}</div>
                 }
             }
             Stack,

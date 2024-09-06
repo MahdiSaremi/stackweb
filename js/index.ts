@@ -1,4 +1,4 @@
-abstract class Entity {
+export abstract class Entity {
 
     parent: Entity
     parentE: Entity
@@ -59,7 +59,7 @@ abstract class Entity {
 
 }
 
-class Root extends Entity {
+export class Root extends Entity {
     source: Group
 
     constructor(source: Group) {
@@ -88,7 +88,7 @@ class Root extends Entity {
     }
 }
 
-class Group extends Entity {
+export class Group extends Entity {
     source: Array<Entity>
 
     constructor(source: Array<Entity>) {
@@ -159,13 +159,13 @@ class Group extends Entity {
     }
 }
 
-interface DomRegister {
+export interface DomRegister {
     name: string
     attrs: Object
     slot: Group
 }
 
-class Dom extends Entity {
+export class Dom extends Entity {
     source: DomRegister
 
     constructor(source: DomRegister) {
@@ -199,7 +199,7 @@ class Dom extends Entity {
     }
 }
 
-class Text extends Entity {
+export class Text extends Entity {
     node: Node
     value: string
 
@@ -232,7 +232,7 @@ class Text extends Entity {
     }
 }
 
-class HelloWorld extends Entity {
+export class HelloWorld extends Entity {
     node: Node
 
     onMount() {
@@ -258,12 +258,12 @@ class HelloWorld extends Entity {
     }
 }
 
-interface ComponentRegister {
+export interface ComponentRegister {
     states: ($: Invoke) => Object
     slot: ($: Invoke) => Group
 }
 
-class Component {
+export class Component {
     source: ComponentRegister
 
     constructor(source: ComponentRegister) {
@@ -279,10 +279,10 @@ class Component {
     }
 }
 
-class Invoke extends Entity {
+export class Invoke extends Entity {
     component: Component
     slots: Object
-    attrs: Object
+    props: Object
     states = {}
     content: Group
 
@@ -290,7 +290,7 @@ class Invoke extends Entity {
         super()
         this.component = component
         this.slots = slots
-        this.attrs = attrs
+        this.props = attrs
     }
 
     onMount() {
@@ -325,9 +325,9 @@ class Invoke extends Entity {
                 changed = true
                 this.slots = (other as Invoke).slots
             }
-            if (JSON.stringify(this.attrs) !== JSON.stringify((other as Invoke).attrs)) {
+            if (JSON.stringify(this.props) !== JSON.stringify((other as Invoke).props)) {
                 changed = true
-                this.attrs = (other as Invoke).attrs
+                this.props = (other as Invoke).props
             }
 
             if (changed) {
@@ -360,15 +360,15 @@ class Invoke extends Entity {
     }
 
     getProp(name: string) {
-        return this.attrs[name]
+        return this.props[name]
     }
 
     get(name: string) {
         if (this.states[name] !== undefined) {
             return this.states[name]
         }
-        if (this.attrs[name] !== undefined) {
-            return this.attrs[name]
+        if (this.props[name] !== undefined) {
+            return this.props[name]
         }
         if (this.slots[name] !== undefined) {
             return this.slots[name]
@@ -386,7 +386,7 @@ class Invoke extends Entity {
     }
 }
 
-class If extends Entity {
+export class If extends Entity {
     source: Group
     condition: boolean
 
@@ -435,7 +435,7 @@ class If extends Entity {
     }
 }
 
-let StackWeb = {
+window['StackWeb'] = {
     Entity,
     Root,
     Group,
@@ -446,7 +446,3 @@ let StackWeb = {
     Invoke,
     If,
 }
-
-window['StackWeb'] = StackWeb
-
-export default StackWeb

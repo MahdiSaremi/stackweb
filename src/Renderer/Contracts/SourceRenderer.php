@@ -10,6 +10,7 @@ use StackWeb\Compilers\Stack\Structs\_ComponentStruct;
 use StackWeb\Compilers\Stack\Structs\_StackStruct;
 use StackWeb\Compilers\StringReader;
 use StackWeb\Renderer\Builder\SourceBuilder;
+use StackWeb\Renderer\Scope\ComponentScope;
 
 interface SourceRenderer
 {
@@ -17,6 +18,8 @@ interface SourceRenderer
     public function __construct(StringReader $reader);
 
     public function renderStack(SourceBuilder $out, _StackStruct $stack) : void;
+
+    public function getComponentScope() : ComponentScope;
 
     public function renderComponent(SourceBuilder $out, _ComponentStruct $component) : void;
 
