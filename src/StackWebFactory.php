@@ -146,7 +146,7 @@ class StackWebFactory
             $content .= $component->component->render->call($this);
         }
 
-        return respongise($content);
+        return response($content);
     }
 
 }
