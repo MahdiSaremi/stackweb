@@ -136,14 +136,14 @@ class StackWebFactory
 
         $content = '';
 
-        if ($component->component->render)
+        if ($component->component->renderApi)
         {
-            $content .= $component->component->render->call($this);
+            $content .= $component->component->renderApi->call($this);
         }
 
-        if ($component->component->renderJs)
+        if ($component->component->renderCli)
         {
-            $content .= $component->component->render->call($this);
+            $content .= $component->component->renderCli->call($this);
         }
 
         return response($content);

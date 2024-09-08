@@ -9,6 +9,9 @@ use StackWeb\Renderer\Contracts\SourceRenderer;
 class ComponentScope
 {
 
+    /**
+     * @var \WeakMap<_ApiPhpStruct, string>
+     */
     protected \WeakMap $apiResults;
 
     public function __construct(
@@ -31,6 +34,9 @@ class ComponentScope
         }
     }
 
+    /**
+     * @return \WeakMap<_ApiPhpStruct, string>
+     */
     public function getApiResults() : \WeakMap
     {
         return $this->apiResults;

@@ -34,13 +34,26 @@ class Component
         return $this;
     }
 
-    public $render;
-    public $renderJs;
+    public $renderApi;
+    public $renderCli;
 
-    public function render($callback, $js)
+    public function renderApi($callback)
     {
-        $this->render = $callback;
-        $this->renderJs = $js;
+        $this->renderApi = $callback;
+        return $this;
+    }
+
+    public function renderCli($callback)
+    {
+        $this->renderCli = $callback;
+        return $this;
+    }
+
+    public array $apiResults;
+
+    public function apiResults(array $items)
+    {
+        $this->apiResults = $items;
         return $this;
     }
 

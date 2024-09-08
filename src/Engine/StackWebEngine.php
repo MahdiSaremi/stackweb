@@ -19,7 +19,8 @@ class StackWebEngine implements Engine
         $relativePath = Str::after($path, base_path());
         $cached = StackWeb::getStackCachedComponentPath($relativePath);
 
-        if (!file_exists($cached) || filemtime($path) >= filemtime($cached))
+        // if (!file_exists($cached) || filemtime($path) >= filemtime($cached))
+        if (true) // todo : test
         {
             $string = new StringReader(file_get_contents($path), $path);
 

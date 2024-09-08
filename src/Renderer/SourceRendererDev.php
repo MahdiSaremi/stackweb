@@ -32,7 +32,7 @@ class SourceRendererDev implements SourceRenderer
 
     public function renderStack(SourceBuilder $out, _StackStruct $stack) : void
     {
-        $out->append("\StackWeb\StackWeb::export([\n");
+        $out->append("<?php\n\n\StackWeb\StackWeb::export(new \StackWeb\Foundation\Stack([\n");
         foreach ($stack->components as $component)
         {
             $out->appendObject($component->name);
@@ -42,7 +42,7 @@ class SourceRendererDev implements SourceRenderer
 
             $out->append(",\n");
         }
-        $out->append("]);");
+        $out->append("]));");
     }
 
     protected ComponentScope $componentScope;
@@ -130,7 +130,7 @@ class SourceRendererDev implements SourceRenderer
         {
             $out->appendObject($id);
             $out->append(" => fn() => (");
-            $out->append($this->value($value));
+            $out->append($value->php);
             $out->append("),\n");
         }
         $out->append("])\n");
@@ -142,7 +142,7 @@ class SourceRendererDev implements SourceRenderer
         {
             if ($value instanceof _ApiPhpStruct)
             {
-                return $value->php;
+                return "\$this->getApiResult(" . PhpRenderer::render($this->getComponentScope()->apiResult($value)) . ")";
             }
             elseif ($value instanceof _CliPhpStruct)
             {
@@ -172,7 +172,7 @@ class SourceRendererDev implements SourceRenderer
 
     public function renderComponentHtmlXApi(SourceBuilder $out, _ComponentStruct $component, _HtmlXStruct $htmlX)
     {
-        $out->append('DomRenderer::render([');
+        $out->append('\StackWeb\Renderer\DomRenderer::render([');
         $this->renderHtmlXNodesApi($out, $component, $htmlX->nodes);
         $out->append('])');
     }
@@ -192,9 +192,16 @@ class SourceRendererDev implements SourceRenderer
             $out->append("['dom', ");
             $out->append($this->value($node->name) . ", ");
             $this->renderHtmlXArrayApi($out, $component, $node->props);
-            $out->append(", ");
-            $this->renderHtmlXNodesApi($out, $component, $node->slot);
-            $out->append("], ");
+            $out->append(", [");
+            if (isset($node->slot))
+            {
+                $this->renderHtmlXNodesApi($out, $component, $node->slot);
+            }
+            else
+            {
+                $out->appendObject(null);
+            }
+            $out->append("]], ");
         }
         elseif ($node instanceof _TextStruct)
         {
