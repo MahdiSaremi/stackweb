@@ -19,7 +19,7 @@ class SourceRendererTest extends TestCase
             <<<'Stack'
             import Demo
             
-            component Counter ($foo = null, $bar) {
+            component ($foo = null, $bar) {
                 slot $icon {
                     <svg />
                 }

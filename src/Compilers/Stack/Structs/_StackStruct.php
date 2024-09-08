@@ -44,7 +44,7 @@ class _StackStruct implements Token
             [$name, $subject] = explode('.', $name);
             if (isset($this->imports[$name]))
             {
-                return $this->imports[$name] . ':'
+                return $this->imports[$name] . ':';
             }
         }
     }

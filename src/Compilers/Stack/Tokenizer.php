@@ -115,10 +115,7 @@ class Tokenizer implements TokenizerContract
     public function parseComponent(StringReader $string, int $start) : Tokens\_ComponentToken
     {
         $string->readWhiteSpaces();
-        if ('' === $name = $string->readCWord())
-        {
-            $name = null;
-        }
+        $name = $string->readCWord();
 
         $string->readWhiteSpaces();
         $offset1 = $string->offset;
