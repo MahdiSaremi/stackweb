@@ -15,14 +15,27 @@ class ComponentContainer
 
     public array $__states = [];
 
+    public array $__apiResults = [];
+
     public function mount(array $props)
     {
         $this->__props = $props;
         $this->__states = [];
+        $this->__apiResults = [];
         foreach ($this->component->states as $name => [$default, ])
         {
             $this->__states[$name] = $default->call($this);
         }
+    }
+
+    public function getApiResult(string $name)
+    {
+        if (!array_key_exists($name, $this->__apiResults))
+        {
+            return $this->__apiResults[$name] = $this->component->apiResults[$name]->call($this);
+        }
+
+        return $this->__apiResults[$name];
     }
 
     public function __get(string $name)
