@@ -15,6 +15,7 @@ use StackWeb\Compilers\Stack\Tokens\_ComponentRenderToken;
 use StackWeb\Compilers\Stack\Tokens\_ComponentSlotToken;
 use StackWeb\Compilers\Stack\Tokens\_ComponentStateToken;
 use StackWeb\Compilers\Stack\Tokens\_ComponentToken;
+use StackWeb\Compilers\Stack\Tokens\_ImportToken;
 use StackWeb\Compilers\StringReader;
 
 class StackParser implements Parser
@@ -39,9 +40,10 @@ class StackParser implements Parser
     }
 
 
+
     public function parse() : void
     {
-        $stack = new Structs\_StackStruct(
+        $this->stack = new Structs\_StackStruct(
             $this->string,
             $this->string->startIndex,
             $this->string->startIndex + $this->string->length,
@@ -52,20 +54,22 @@ class StackParser implements Parser
         {
             if ($token instanceof _ComponentToken)
             {
-                if (array_key_exists($token->name ?? '', $stack->components))
+                if (array_key_exists($token->name ?? '', $this->stack->components))
                 {
                     $token->syntaxError("Component [$token->name] is already defined");
                 }
 
-                $stack->components[$token->name] = $this->parseComponent($token);
+                $this->stack->components[$token->name] = $this->parseComponent($token);
+            }
+            elseif ($token instanceof _ImportToken)
+            {
+
             }
             else
             {
                 $token->syntaxError("Unknown token");
             }
         }
-
-        $this->stack = $stack;
     }
 
     public function parseComponent(_ComponentToken $component)

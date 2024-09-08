@@ -49,9 +49,12 @@ class StackWebFactory
         return $this->pathPrefix;
     }
 
-    public function guessComponentViewName($name)
+    public function guessComponentViewName(string $component)
     {
-        return $this->getStackPrefix() . collect(explode('.', $name))->map(Str::kebab($name))->implode('.');
+        [$namespace, $component] = ComponentNaming::splitComponent($component);
+        $component = ComponentNaming::implodeComponent($namespace, $this->getStackPrefix() . $component, null);
+
+        return ComponentNaming::componentToView($component);
     }
 
 
@@ -97,7 +100,7 @@ class StackWebFactory
         $this->loadedStacks[$this->importingName] = $stack;
     }
 
-    public function newComponent(string $name) : ?ComponentContainer
+    public function newComponent(string $name) : ComponentContainer
     {
         if ($stack = $this->tryGetStack($name))
         {
@@ -115,19 +118,35 @@ class StackWebFactory
             }
         }
 
-        return null;
+        throw new ComponentNotFoundException("Component [$name] not found");
     }
 
     public function invoke(string $name, array $props, array $slots)
     {
-        if ($component = $this->newComponent($name))
-        {
-            $component->mount($props);
+        $component = $this->newComponent($name);
 
-            return $component;
+        $component->mount($props);
+
+        return $component;
+    }
+
+    public function responsePage(string $component)
+    {
+        $component = $this->invoke($component, [], []);
+
+        $content = '';
+
+        if ($component->component->render)
+        {
+            $content .= $component->component->render->call($this);
         }
 
-        throw new ComponentNotFoundException("Component [$name] not found");
+        if ($component->component->renderJs)
+        {
+            $content .= $component->component->render->call($this);
+        }
+
+        return respongise($content);
     }
 
 }

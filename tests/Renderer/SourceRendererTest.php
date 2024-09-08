@@ -17,6 +17,8 @@ class SourceRendererTest extends TestCase
 
         $string = new StringReader(
             <<<'Stack'
+            import Demo
+            
             component Counter ($foo = null, $bar) {
                 slot $icon {
                     <svg />

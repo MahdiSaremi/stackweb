@@ -43,6 +43,10 @@ class Tokenizer implements TokenizerContract
                         $this->tokens[] = $this->parseComponent($string, $offset1);
                         break;
 
+                    case 'import':
+                        $this->tokens[] = $this->parseImport($string, $offset1);
+                        break;
+
                     default:
                         $string->syntaxError("Unknown symbol [$word]");
                 }
@@ -54,6 +58,58 @@ class Tokenizer implements TokenizerContract
 
             $string->readWhiteSpaces();
         }
+    }
+
+    public function parseImport(StringReader $string, int $start)
+    {
+        $name = null;
+        $subject = null;
+        $as = null;
+
+        $string->readWhiteSpaces();
+        if ('' === $name = $string->readHWord())
+        {
+            $string->syntaxError("Expected component name");
+        }
+
+        $string->readWhiteSpaces();
+        $cancel = $string->offset;
+        if (strtolower($string->readHWord()) == 'from')
+        {
+            $subject = $name;
+            $string->readWhiteSpaces();
+            if ('' === $name = $string->readHWord())
+            {
+                $string->syntaxError("Expected component name");
+            }
+        }
+        else $string->offset = $cancel;
+
+        $string->readWhiteSpaces();
+        $cancel = $string->offset;
+        if (strtolower($string->readHWord()) == 'as')
+        {
+            $string->readWhiteSpaces();
+            if ('' === $as = $string->readHWord())
+            {
+                $string->syntaxError("Expected alias name");
+            }
+        }
+        else $string->offset = $cancel;
+
+        // Simplify
+        if (is_null($subject) && preg_match('/^(.*[a-zA-Z0-9\-_]):([a-zA-Z0-9\-_]+)$/', $name, $matches))
+        {
+            [, $name, $subject] = $matches;
+        }
+
+        return new Tokens\_ImportToken(
+            $string,
+            $start, $string->offset,
+            $name,
+            $as,
+            $subject,
+        );
     }
 
     public function parseComponent(StringReader $string, int $start) : Tokens\_ComponentToken
