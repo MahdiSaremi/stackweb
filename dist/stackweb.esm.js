@@ -1,3 +1,85 @@
+var __defProp = Object.defineProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// js/php-functions.ts
+var php_functions_exports = {};
+__export(php_functions_exports, {
+  gettype: () => gettype,
+  is_bool: () => is_bool,
+  is_double: () => is_double,
+  is_float: () => is_float,
+  is_int: () => is_int,
+  is_integer: () => is_integer,
+  is_null: () => is_null,
+  is_object: () => is_object,
+  is_string: () => is_string
+});
+function gettype($params) {
+  let value = $params.next("value");
+  $params.end();
+  if (value === null) {
+    return "null";
+  }
+  switch (typeof value) {
+    case "undefined":
+      return "null";
+    case "number":
+      return "float";
+    case "bigint":
+      return "int";
+    case "boolean":
+      return "bool";
+    case "string":
+      return "string";
+    case "object":
+    case "function":
+    case "symbol":
+    default:
+      return "object";
+  }
+}
+function is_int($params) {
+  let value = $params.next("value");
+  $params.end();
+  return typeof value === "bigint";
+}
+var is_integer = is_int;
+function is_float($params) {
+  let value = $params.next("value");
+  $params.end();
+  return typeof value === "number";
+}
+var is_double = is_float;
+function is_bool($params) {
+  let value = $params.next("value");
+  $params.end();
+  return typeof value === "boolean";
+}
+function is_null($params) {
+  let value = $params.next("value");
+  $params.end();
+  return value === void 0 || value === null;
+}
+function is_object($params) {
+  let value = $params.next("value");
+  $params.end();
+  return gettype(value) === "object";
+}
+function is_string($params) {
+  let value = $params.next("value");
+  $params.end();
+  return typeof value === "string";
+}
+
+// js/php.ts
+var PHP = {
+  Functions: php_functions_exports
+};
+window.PHP = PHP;
+
 // js/index.ts
 var Entity = class {
   constructor() {

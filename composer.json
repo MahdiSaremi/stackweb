@@ -22,7 +22,8 @@
     ],
     "require": {
         "laravel/framework": "^11.20",
-        "js-phpize/js-phpize": "^2.9"
+        "js-phpize/js-phpize": "^2.9",
+        "nikic/php-parser": "^5.1"
     },
     "require-dev": {
         "orchestra/testbench": "^9.2"

@@ -16,8 +16,8 @@ class _CliPhpStruct implements Token, Value
         public int $startOffset,
         public int $endOffset,
 
-        public string $php, // todo
-        public string $js, // todo
+        public string $php,
+        public string $js,
     )
     {
     }

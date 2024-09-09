@@ -2,6 +2,7 @@
 
 namespace StackWeb\Compilers\CliPhp\Tokens;
 
+use PhpParser\Node\Expr;
 use StackWeb\Compilers\Concerns\TokenTrait;
 use StackWeb\Compilers\Contracts\Token;
 use StackWeb\Compilers\HtmlX\Tokens\_PropValue;
@@ -13,10 +14,11 @@ readonly class _CliPhpToken implements Token, _PropValue
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $code,
+        public string       $phpCode,
+        public Expr         $expr,
     )
     {
     }

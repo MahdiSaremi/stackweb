@@ -1,3 +1,5 @@
+import './php'
+
 export abstract class Entity {
 
     parent: Entity

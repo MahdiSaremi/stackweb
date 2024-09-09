@@ -437,7 +437,7 @@ class StringReader
         $super = $this->getSuperParent();
 
         throw new SyntaxError(
-            sprintf("Syntax Error: %s in [%s] on line %s", $message, $super->fileName, $line),
+            sprintf("Syntax Error: %s on line %s in [%s]", $message, $line, $super->fileName),
         );
     }
 
@@ -446,12 +446,26 @@ class StringReader
         $super = $this->getSuperParent();
         [$line, $index] = $super->silent(function () use ($super, $token)
         {
-            $super->offset = $token->getStartOffset();
+            $super->offset = $token->getStartOffset() + $this->startIndex;
             return [$super->getLine(), $super->getIndex()];
         });
 
         throw new SyntaxError(
-            sprintf("Syntax Error: %s in [%s] on line %s", $message, $super->fileName, $line),
+            sprintf("Syntax Error: %s on line %s in [%s]", $message, $line, $super->fileName),
+        );
+    }
+
+    public function syntaxErrorAt(int $offset, string $message)
+    {
+        $super = $this->getSuperParent();
+        [$line, $index] = $super->silent(function () use ($super, $offset)
+        {
+            $super->offset = $offset + $this->startIndex;
+            return [$super->getLine(), $super->getIndex()];
+        });
+
+        throw new SyntaxError(
+            sprintf("Syntax Error: %s on line %s in [%s]", $message, $line, $super->fileName),
         );
     }
 
