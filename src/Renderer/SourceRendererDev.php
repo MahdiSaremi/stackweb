@@ -267,7 +267,37 @@ class SourceRendererDev implements SourceRenderer
 
     public function renderComponentHtmlXCli(StringBuilder $out, _ComponentStruct $component, _HtmlXStruct $htmlX)
     {
+        $out->append("new StackWeb.Component({");
+
+        $out->append("states: ($) => ({");
+        foreach ($component->states as $state)
+        {
+            $out->append($state->name . ': ');
+            $this->renderValueCli($out, $state->default);
+            $out->append(', ');
+        }
+        $out->append("}), ");
+
+        $out->append("slots: {");
+        foreach ($component->slots as $slot)
+        {
+            $out->append($slot->name . ': ($) => ');
+            if ($slot->default)
+            {
+                $this->renderHtmlXNodesCli($out, $component, $slot->default->nodes);
+            }
+            else
+            {
+                $out->append('null, ');
+            }
+        }
+        $out->append("}, ");
+
+        $out->append("render: ($) => ");
         $this->renderHtmlXNodesCli($out, $component, $htmlX->nodes);
+        $out->append(", ");
+
+        $out->append("})");
     }
 
     public function renderHtmlXNodesCli(StringBuilder $out, _ComponentStruct $component, array $nodes)

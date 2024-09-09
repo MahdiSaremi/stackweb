@@ -260,7 +260,12 @@ export class HelloWorld extends Entity {
 
 export interface ComponentRegister {
     states: ($: Invoke) => Object
-    slot: ($: Invoke) => Group
+    slots: ComponentRegisterSlots,
+    render: ($: Invoke) => Group,
+}
+
+export interface ComponentRegisterSlots {
+    [index: string]: ($: Invoke) => Group,
 }
 
 export class Component {
@@ -294,8 +299,14 @@ export class Invoke extends Entity {
     }
 
     onMount() {
+        for (const slotKey in this.component.source.slots) {
+            if (this.slots[slotKey] === undefined) {
+                this.slots[slotKey] = this.component.source.slots[slotKey](this)
+            }
+        }
+
         this.states = this.component.source.states(this)
-        this.content = this.component.source.slot(this)
+        this.content = this.component.source.render(this)
 
         this.content.mount(this, this.parentE, this.el)
     }
@@ -311,9 +322,9 @@ export class Invoke extends Entity {
     changed: boolean = false
 
     refresh() {
-        const newSlot = this.component.source.slot(this)
+        const newRender = this.component.source.render(this)
 
-        this.content.morph(newSlot)
+        this.content.morph(newRender)
 
         this.changed = false
     }
@@ -331,11 +342,11 @@ export class Invoke extends Entity {
             }
 
             if (changed) {
-                this.content.morph((other as Invoke).component.source.slot(this))
+                this.content.morph((other as Invoke).component.source.render(this))
             }
         }
         if (this.component.morphMode == 1) {
-            this.content.morph((other as Invoke).component.source.slot(this))
+            this.content.morph((other as Invoke).component.source.render(this))
         }
     }
 

@@ -209,9 +209,9 @@ class StackWebFactory
         {
             if ($dep->renderCli)
             {
-                $content .= "[" . JsRenderer::render($dep->name) . "]: () => (";
-                $content .= $dep->renderCli->call($component);
-                $content .= "),";
+                $content .= "[" . JsRenderer::render($dep->name) . "]: () => ";
+                $content .= $dep->renderCli->call($dep->getStatic());
+                $content .= ",";
             }
         }
         $content .= "}</script>";

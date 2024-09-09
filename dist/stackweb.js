@@ -202,11 +202,16 @@
       this.changed = false;
       this.component = component;
       this.slots = slots;
-      this.attrs = attrs;
+      this.props = attrs;
     }
     onMount() {
+      for (const slotKey in this.component.source.slots) {
+        if (this.slots[slotKey] === void 0) {
+          this.slots[slotKey] = this.component.source.slots[slotKey](this);
+        }
+      }
       this.states = this.component.source.states(this);
-      this.content = this.component.source.slot(this);
+      this.content = this.component.source.render(this);
       this.content.mount(this, this.parentE, this.el);
     }
     onUnmount() {
@@ -216,8 +221,8 @@
       this.states = this.component.source.states(this);
     }
     refresh() {
-      const newSlot = this.component.source.slot(this);
-      this.content.morph(newSlot);
+      const newRender = this.component.source.render(this);
+      this.content.morph(newRender);
       this.changed = false;
     }
     onMorph(other) {
@@ -227,16 +232,16 @@
           changed = true;
           this.slots = other.slots;
         }
-        if (JSON.stringify(this.props) !== JSON.stringify(other.attrs)) {
+        if (JSON.stringify(this.props) !== JSON.stringify(other.props)) {
           changed = true;
-          this.props = other.attrs;
+          this.props = other.props;
         }
         if (changed) {
-          this.content.morph(other.component.source.slot(this));
+          this.content.morph(other.component.source.render(this));
         }
       }
       if (this.component.morphMode == 1) {
-        this.content.morph(other.component.source.slot(this));
+        this.content.morph(other.component.source.render(this));
       }
     }
     getState(name) {
@@ -315,7 +320,7 @@
       return this.parent.resolveNextNodeOf(this);
     }
   };
-  var StackWeb = {
+  window["StackWeb"] = {
     Entity,
     Root,
     Group,
@@ -326,6 +331,4 @@
     Invoke,
     If
   };
-  window["StackWeb"] = StackWeb;
-  var js_default = StackWeb;
 })();

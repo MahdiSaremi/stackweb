@@ -78,4 +78,11 @@ class Component
         return new ComponentContainer($this);
     }
 
+    protected ComponentContainer $static;
+
+    public function getStatic() : ComponentContainer
+    {
+        return $this->static ??= $this->create();
+    }
+
 }
