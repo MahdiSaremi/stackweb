@@ -2,9 +2,11 @@
 
 namespace StackWeb\Renderer;
 
+use Illuminate\Support\Arr;
 use StackWeb\Compilers\ApiPhp\Structs\_ApiPhpStruct;
 use StackWeb\Compilers\CliPhp\Structs\_CliPhpStruct;
 use StackWeb\Compilers\Contracts\Value;
+use StackWeb\Compilers\HtmlX\Structs\_DomPropStruct;
 use StackWeb\Compilers\HtmlX\Structs\_DomStruct;
 use StackWeb\Compilers\HtmlX\Structs\_HtmlXStruct;
 use StackWeb\Compilers\HtmlX\Structs\_InvokeStruct;
@@ -202,9 +204,15 @@ class SourceRendererDev implements SourceRenderer
         if ($node instanceof _DomStruct)
         {
             $out->append("['dom', ");
-            $out->append($this->value($node->name) . ", ");
-            $this->renderHtmlXArrayApi($out, $component, $node->props);
-            $out->append(", [");
+            $out->append($this->value($node->name) . ", [");
+            foreach ($node->props as $prop)
+            {
+                $out->append($this->value($prop->name));
+                $out->append(" => ");
+                $out->append($this->value($prop->value));
+                $out->append(", ");
+            }
+            $out->append("], [");
             if (isset($node->slot))
             {
                 $this->renderHtmlXNodesApi($out, $component, $node->slot);
