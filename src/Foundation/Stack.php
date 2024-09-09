@@ -11,15 +11,16 @@ class Stack
     {
     }
 
-    public function has(string $name)
+    public function has(?string $name)
     {
-        return array_key_exists($name, $this->components);
+        return array_key_exists($name ?? '', $this->components);
     }
 
-    public function get(string $name) : ?Component
+    public function get(?string $name) : ?Component
     {
         if (!$this->has($name)) return null;
 
+        $name ??= '';
         if ($this->components[$name] instanceof \Closure)
         {
             $this->components[$name] = $this->components[$name]();
@@ -28,7 +29,7 @@ class Stack
         return $this->components[$name];
     }
 
-    public function create(string $name) : ?ComponentContainer
+    public function create(?string $name) : ?ComponentContainer
     {
         return $this->get($name)?->create();
     }

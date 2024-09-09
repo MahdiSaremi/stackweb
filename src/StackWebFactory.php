@@ -144,9 +144,9 @@ class StackWebFactory
 
         if ($stackObject = $this->importStack($stack))
         {
-            if ($stackObject->has($subject ?? ''))
+            if ($stackObject->has($subject))
             {
-                return $stackObject->create($subject ?? '');
+                return $stackObject->create($subject);
             }
 
             throw new ComponentNotFoundException("Component [$component] not found");
