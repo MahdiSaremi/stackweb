@@ -2,12 +2,9 @@
 
 namespace StackWeb;
 
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use StackWeb\Api\StackApi;
-use StackWeb\Compiler\StackWebCompiler;
 
 class StackWebServiceProvider extends ServiceProvider
 {
