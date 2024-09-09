@@ -262,6 +262,9 @@ var Invoke = class extends Entity {
   getProp(name) {
     return this.props[name];
   }
+  getApiResult(name) {
+    return null;
+  }
   get(name) {
     if (this.states[name] !== void 0) {
       return this.states[name];

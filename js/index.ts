@@ -374,6 +374,10 @@ export class Invoke extends Entity {
         return this.props[name]
     }
 
+    getApiResult(name: string) {
+        return null // TODO
+    }
+
     get(name: string) {
         if (this.states[name] !== undefined) {
             return this.states[name]
