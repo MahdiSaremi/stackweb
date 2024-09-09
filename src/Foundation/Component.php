@@ -5,9 +5,15 @@ namespace StackWeb\Foundation;
 class Component
 {
 
-    public static function make()
+    public function __construct(
+        public readonly string $name,
+    )
     {
-        return new static;
+    }
+
+    public static function make(string $name)
+    {
+        return new static($name);
     }
 
     public array $props = [];
@@ -56,6 +62,15 @@ class Component
         $this->apiResults = $items;
         return $this;
     }
+
+    public array $depComponents = [];
+
+    public function depComponents(array $deps)
+    {
+        $this->depComponents = $deps;
+        return $this;
+    }
+
 
 
     public function create()

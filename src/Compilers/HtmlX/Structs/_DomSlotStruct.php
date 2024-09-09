@@ -16,8 +16,6 @@ class _DomSlotStruct implements Token, _Node
         public int $endOffset,
 
         public string $name,
-        /** @var _DomPropStruct[] */
-        public array $props,
         /** @var _Node[] */
         public array $inner,
 

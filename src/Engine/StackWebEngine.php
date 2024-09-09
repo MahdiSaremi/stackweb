@@ -16,6 +16,11 @@ class StackWebEngine implements Engine
 
     public function get($path, array $data = [])
     {
+        if (!isset($data['stack']))
+        {
+            throw new \Exception("Stack view should be called using StackWeb factory");
+        }
+
         $relativePath = Str::after($path, base_path());
         $cached = StackWeb::getStackCachedComponentPath($relativePath);
 
@@ -24,7 +29,7 @@ class StackWebEngine implements Engine
         {
             $string = new StringReader(file_get_contents($path), $path);
 
-            $parser = StackParser::from($string);
+            $parser = StackParser::from($string, $data['stack']);
             $parser->parse();
 
             /** @var _StackStruct $stack */

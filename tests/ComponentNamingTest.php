@@ -64,4 +64,44 @@ class ComponentNamingTest extends TestCase
         );
     }
 
+    public function test_split_stack_parts()
+    {
+        $this->assertSame(
+            ['Namespace::Path.Name', 'Subject'],
+            ComponentNaming::splitStack('Namespace::Path.Name:Subject')
+        );
+        $this->assertSame(
+            ['Path.Name', 'Subject'],
+            ComponentNaming::splitStack('Path.Name:Subject')
+        );
+        $this->assertSame(
+            ['Namespace::Path.Name', null],
+            ComponentNaming::splitStack('Namespace::Path.Name')
+        );
+        $this->assertSame(
+            ['Path.Name', null],
+            ComponentNaming::splitStack('Path.Name')
+        );
+    }
+
+    public function test_implode_stack_parts()
+    {
+        $this->assertSame(
+            'Namespace::Path.Name:Subject',
+            ComponentNaming::implodeStack('Namespace::Path.Name', 'Subject')
+        );
+        $this->assertSame(
+            'Path.Name:Subject',
+            ComponentNaming::implodeStack('Path.Name', 'Subject')
+        );
+        $this->assertSame(
+            'Namespace::Path.Name',
+            ComponentNaming::implodeStack('Namespace::Path.Name', null)
+        );
+        $this->assertSame(
+            'Path.Name',
+            ComponentNaming::implodeStack('Path.Name', null)
+        );
+    }
+
 }

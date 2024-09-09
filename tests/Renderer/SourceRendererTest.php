@@ -19,7 +19,13 @@ class SourceRendererTest extends TestCase
             <<<'Stack'
             import Demo
             
-            component ($foo = null, $bar) {
+            component {
+                render {
+                    <Counter />
+                }
+            }
+            
+            component Counter ($foo = null, $bar) {
                 slot $icon {
                     <svg />
                 }
@@ -34,7 +40,7 @@ class SourceRendererTest extends TestCase
             'test'
         );
 
-        $parser = StackParser::from($string);
+        $parser = StackParser::from($string, 'Main');
         $parser->parse();
 
         $out = new SourceBuilder();

@@ -3,6 +3,7 @@
 namespace StackWeb\Tests\Renderer;
 
 use StackWeb\Renderer\DomRenderer;
+use StackWeb\StackWeb;
 use StackWeb\Tests\TestCase;
 
 class DomRendererTest extends TestCase
@@ -37,7 +38,9 @@ class DomRendererTest extends TestCase
 
     public function test_render_components()
     {
-        
+        StackWeb::clearResolvedInstances();
+
+        // StackWeb::invoke('')
     }
 
 }

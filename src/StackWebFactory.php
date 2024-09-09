@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Illuminate\View\Compilers\BladeCompiler;
 use StackWeb\Exceptions\ComponentNotFoundException;
+use StackWeb\Foundation\Component;
 use StackWeb\Foundation\ComponentContainer;
 use StackWeb\Foundation\Stack;
+use StackWeb\Renderer\JsRenderer;
 
 class StackWebFactory
 {
@@ -51,10 +53,14 @@ class StackWebFactory
 
     public function guessComponentViewName(string $component)
     {
-        [$namespace, $component] = ComponentNaming::splitComponent($component);
-        $component = ComponentNaming::implodeComponent($namespace, $this->getStackPrefix() . $component, null);
+        [$stack, ] = ComponentNaming::splitStack($component);
 
-        return ComponentNaming::componentToView($component);
+        return $this->guessStackViewName($stack);
+    }
+
+    public function guessStackViewName(string $stack)
+    {
+        return ComponentNaming::componentToView($stack);
     }
 
 
@@ -65,23 +71,35 @@ class StackWebFactory
      */
     protected array $loadedStacks = [];
 
-    protected function tryGetStack(string $name) : ?Stack
+    public function stackLoaded(string $stack) : bool
     {
-        if (array_key_exists($name, $this->loadedStacks))
+        return array_key_exists($stack, $this->loadedStacks);
+    }
+
+    public function stackExists(string $stack) : bool
+    {
+        return (bool) $this->importStack($stack);
+    }
+
+    public function importStack(string $stack) : ?Stack
+    {
+        if ($this->stackLoaded($stack))
         {
-            return $this->loadedStacks[$name];
+            return $this->loadedStacks[$stack];
         }
 
-        if (View::exists($view = $this->guessComponentViewName($name)))
+        if (View::exists($view = $this->guessComponentViewName($stack)))
         {
-            $this->importingName = $name;
+            $this->importingName = $stack;
             try
             {
-                view($view)->render();
+                view($view, [
+                    'stack' => $stack,
+                ])->render();
 
-                if (!array_key_exists($name, $this->loadedStacks))
+                if (!$this->stackLoaded($stack))
                 {
-                    return $this->loadedStacks[$name] = null;
+                    return $this->loadedStacks[$stack] = null;
                 }
             }
             finally
@@ -89,39 +107,55 @@ class StackWebFactory
                 unset($this->importingName);
             }
         }
+        else
+        {
+            return $this->loadedStacks[$stack] = null;
+        }
 
-        return $this->loadedStacks[$name] ?? null;
+        return $this->loadedStacks[$stack] ?? null;
     }
+
+    public function componentExists(string $component) : bool
+    {
+        [$stack, $subject] = ComponentNaming::splitStack($component);
+
+        return (bool) $this->importStack($stack)?->has($subject);
+    }
+
+    public function importComponent(string $component) : ?Component
+    {
+        [$stack, $subject] = ComponentNaming::splitStack($component);
+
+        return $this->importStack($stack)?->get($subject);
+    }
+
 
     protected string $importingName;
 
-    public function export(Stack $stack)
+    public function export(Stack $stack, ?string $component = null)
     {
-        $this->loadedStacks[$this->importingName] = $stack;
+        $this->loadedStacks[$component ?? $this->importingName] = $stack;
     }
 
-    public function newComponent(string $name) : ComponentContainer
+
+    public function newComponent(string $component) : ComponentContainer
     {
-        if ($stack = $this->tryGetStack($name))
+        [$stack, $subject] = ComponentNaming::splitStack($component);
+
+        if ($stackObject = $this->importStack($stack))
         {
-            if ($stack->has(''))
+            if ($stackObject->has($subject ?? ''))
             {
-                return $stack->create('');
+                return $stackObject->create($subject ?? '');
             }
+
+            throw new ComponentNotFoundException("Component [$component] not found");
         }
 
-        if (str_contains($name, '.') && $stack = $this->tryGetStack(Str::beforeLast($name, '.')))
-        {
-            if ($stack->has($com = Str::afterLast($name, '.')))
-            {
-                return $stack->create($com);
-            }
-        }
-
-        throw new ComponentNotFoundException("Component [$name] not found");
+        throw new ComponentNotFoundException("Component [$stack] not found");
     }
 
-    public function invoke(string $name, array $props, array $slots)
+    public function invoke(string $name, array $props, array $slots) : ComponentContainer
     {
         $component = $this->newComponent($name);
 
@@ -129,6 +163,31 @@ class StackWebFactory
 
         return $component;
     }
+
+
+    /**
+     * @param Component   $component
+     * @param Component[] $deps
+     * @return void
+     */
+    protected function extractRecursiveComponentDeps(Component $component, array &$deps)
+    {
+        if (in_array($component, $deps))
+        {
+            return;
+        }
+
+        $deps[] = $component;
+
+        foreach ($component->depComponents as $depName)
+        {
+            if ($depComponent = $this->importComponent($depName))
+            {
+                $this->extractRecursiveComponentDeps($depComponent, $deps);
+            }
+        }
+    }
+
 
     public function responsePage(string $component)
     {
@@ -141,10 +200,21 @@ class StackWebFactory
             $content .= $component->component->renderApi->call($component);
         }
 
-        if ($component->component->renderCli)
+        /** @var Component[] $depComponents */
+        $depComponents = [];
+        $this->extractRecursiveComponentDeps($component->component, $depComponents);
+
+        $content .= "<script>window.Components = {";
+        foreach ($depComponents as $dep)
         {
-            $content .= $component->component->renderCli->call($component);
+            if ($dep->renderCli)
+            {
+                $content .= "[" . JsRenderer::render($dep->name) . "]: () => (";
+                $content .= $dep->renderCli->call($component);
+                $content .= "),";
+            }
         }
+        $content .= "}</script>";
 
         return response($content);
     }

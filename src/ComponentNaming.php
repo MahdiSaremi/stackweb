@@ -7,7 +7,17 @@ use Illuminate\Support\Str;
 class ComponentNaming
 {
 
-    public static function viewToComponent(string $view)
+    /**
+     * Converts view name to component name
+     *
+     * `View: my-ns:foo-path.bar-name:subject`
+     *
+     * `Component: MyNs:FooPath.BarName:Subject`
+     *
+     * @param string $view
+     * @return string
+     */
+    public static function viewToComponent(string $view) : string
     {
         return preg_replace_callback(
             '/(^|[:._\-\s])([a-z])/',
@@ -19,7 +29,17 @@ class ComponentNaming
         );
     }
 
-    public static function componentToView(string $component)
+    /**
+     * Converts component name to view name
+     *
+     * `Component: MyNs:FooPath.BarName:Subject`
+     *
+     * `View: my-ns:foo-path.bar-name:subject`
+     *
+     * @param string $component
+     * @return string
+     */
+    public static function componentToView(string $component) : string
     {
         [$namespace, $component] = static::splitComponent($component);
 
@@ -40,7 +60,15 @@ class ComponentNaming
     }
 
 
-    public static function splitComponent(string $component)
+    /**
+     * Split component namespace, name and subject
+     *
+     * `[$namespace, $component, $subject] = ComponentNaming::splitComponent($component);`
+     *
+     * @param string $component
+     * @return string[]
+     */
+    public static function splitComponent(string $component) : array
     {
         $namespace = null;
         $subject = null;
@@ -59,12 +87,50 @@ class ComponentNaming
         return [$namespace, $component, $subject];
     }
 
-    public static function implodeComponent(?string $namespace, string $component, ?string $subject)
+    /**
+     * Implode component namespace, name and subject
+     *
+     * `$namespace = ComponentNaming::implodeComponent($namespace, $component, $subject);`
+     *
+     * @param string|null $namespace
+     * @param string      $component
+     * @param string|null $subject
+     * @return string
+     */
+    public static function implodeComponent(?string $namespace, string $component, ?string $subject) : string
     {
         return
             (isset($namespace) ? $namespace . '::' : '') .
             $component .
             (isset($subject) ? ':' . $subject : '');
+    }
+
+    /**
+     * Split component stack and subject
+     *
+     * `[$stack, $subject] = ComponentNaming::splitStack($component);`
+     *
+     * @param string $component
+     * @return string[]
+     */
+    public static function splitStack(string $component) : array
+    {
+        [$namespace, $component, $subject] = static::splitComponent($component);
+        return [static::implodeComponent($namespace, $component, null), $subject];
+    }
+
+    /**
+     * Implode component stack and subject
+     *
+     *  `$component = ComponentNaming::implodeStack($stack, $subject);`
+     *
+     * @param string      $stack
+     * @param string|null $subject
+     * @return string
+     */
+    public static function implodeStack(string $stack, ?string $subject) : string
+    {
+        return $stack . (isset($subject) ? ':' . $subject : '');
     }
 
 }

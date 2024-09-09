@@ -55,7 +55,9 @@ class SourceRendererDev implements SourceRenderer
     public function renderComponent(SourceBuilder $out, _ComponentStruct $component) : void
     {
         $this->componentScope = new ComponentScope($this, $component);
-        $out->append("\StackWeb\Foundation\Component::make()\n");
+        $out->append("\StackWeb\Foundation\Component::make(");
+        $out->appendObject($component->name);
+        $out->append(")\n");
 
         $this->renderComponentProps($out, $component);
         $this->renderComponentSlots($out, $component);
@@ -65,6 +67,9 @@ class SourceRendererDev implements SourceRenderer
         $this->renderComponentRenderCli($out, $component);
 
         $this->renderComponentApiResults($out, $component);
+
+        $this->renderComponentDeps($out, $component);
+
         unset($this->componentScope);
     }
 
@@ -134,6 +139,13 @@ class SourceRendererDev implements SourceRenderer
             $out->append("),\n");
         }
         $out->append("])\n");
+    }
+
+    public function renderComponentDeps(SourceBuilder $out, _ComponentStruct $component)
+    {
+        $out->append("->depComponents(");
+        $out->appendObject($component->depComponents);
+        $out->append(")\n");
     }
 
     public function value(mixed $value) : string
@@ -209,7 +221,21 @@ class SourceRendererDev implements SourceRenderer
         }
         elseif ($node instanceof _InvokeStruct)
         {
-            $out->append('todo'); // todo
+            $out->append('\StackWeb\StackWeb::invoke(');
+            $out->append($this->value($node->name));
+            $out->append(', [');
+            foreach ($node->props as $prop)
+            {
+                $out->append($this->value($prop->name) . ' => ' . $this->value($prop->value) . ', ');
+            }
+            $out->append('], [');
+            foreach ($node->slots as $slot)
+            {
+                $out->append($this->value($slot->name) . ' => fn () => [');
+                $this->renderHtmlXNodesApi($out, $component, $slot->inner);
+                $out->append('], ');
+            }
+            $out->append(']), ');
         }
     }
 
@@ -263,7 +289,14 @@ class SourceRendererDev implements SourceRenderer
             $out->append(", attrs: ");
             $this->renderHtmlXArrayCli($out, $component, $node->props);
             $out->append(", slot: ");
-            $this->renderHtmlXNodesCli($out, $component, $node->slot);
+            if (isset($node->slot))
+            {
+                $this->renderHtmlXNodesCli($out, $component, $node->slot);
+            }
+            else
+            {
+                $out->appendObject('null');
+            }
             $out->append("}), ");
         }
         elseif ($node instanceof _TextStruct)

@@ -10,6 +10,7 @@ use StackWeb\Compilers\Contracts\Parser;
 use StackWeb\Compilers\Contracts\Token;
 use StackWeb\Compilers\HtmlX\HtmlXParser;
 use StackWeb\Compilers\HtmlX\Structs\_HtmlXStruct;
+use StackWeb\Compilers\Stack\Structs\_ComponentStruct;
 use StackWeb\Compilers\Stack\Structs\_StackStruct;
 use StackWeb\Compilers\Stack\Tokens\_ComponentRenderToken;
 use StackWeb\Compilers\Stack\Tokens\_ComponentSlotToken;
@@ -25,18 +26,19 @@ class StackParser implements Parser
 
     public function __construct(
         protected StringReader $string,
+        public readonly string $stackName,
         /** @var Token[] */
         protected array $tokens,
     )
     {
     }
 
-    public static function from(StringReader $string)
+    public static function from(StringReader $string, string $stackName)
     {
         $tokenizer = new Tokenizer($string);
         $tokenizer->parse();
 
-        return new static($string, $tokenizer->getTokens());
+        return new static($string, $stackName, $tokenizer->getTokens());
     }
 
 
@@ -47,8 +49,18 @@ class StackParser implements Parser
             $this->string,
             $this->string->startIndex,
             $this->string->startIndex + $this->string->length,
+            $this->stackName,
+            [],
             [],
         );
+
+        foreach ($this->tokens as $token)
+        {
+            if ($token instanceof _ComponentToken)
+            {
+                $this->stack->componentNames[] = $token->name;
+            }
+        }
 
         foreach ($this->tokens as $token)
         {
@@ -63,7 +75,7 @@ class StackParser implements Parser
             }
             elseif ($token instanceof _ImportToken)
             {
-
+                $this->stack->import($token);
             }
             else
             {
@@ -72,8 +84,17 @@ class StackParser implements Parser
         }
     }
 
+    public _ComponentStruct $component;
+
     public function parseComponent(_ComponentToken $component)
     {
+        $this->component = new Structs\_ComponentStruct(
+            $component->reader,
+            $component->startOffset,
+            $component->endOffset,
+            $component->name,
+        );
+
         $render = null;
         $props = [];
         $slots = [];
@@ -143,21 +164,17 @@ class StackParser implements Parser
             $component->syntaxError("Component not contains the render section");
         }
 
-        return new Structs\_ComponentStruct(
-            $component->reader,
-            $component->startOffset,
-            $component->endOffset,
-            $component->name,
-            $props,
-            $slots,
-            $states,
-            $render,
-        );
+        $this->component->props = $props;
+        $this->component->slots = $slots;
+        $this->component->states = $states;
+        $this->component->render = $render;
+
+        return $this->component;
     }
 
     public function parseHtmlX(Token $base, array $tokens) : _HtmlXStruct
     {
-        $parser = new HtmlXParser($base, $tokens);
+        $parser = new HtmlXParser($this->stack, $this->component, $base, $tokens);
         $parser->parse();
         return $parser->getStruct();
     }
