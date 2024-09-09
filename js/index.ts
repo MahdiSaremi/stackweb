@@ -291,17 +291,17 @@ export class Invoke extends Entity {
     states = {}
     content: Group
 
-    constructor(component: Component, slots: Object, attrs: Object) {
+    constructor(component: Component, props: Object, slots: Object) {
         super()
         this.component = component
+        this.props = props
         this.slots = slots
-        this.props = attrs
     }
 
     onMount() {
         for (const slotKey in this.component.source.slots) {
             if (this.slots[slotKey] === undefined) {
-                this.slots[slotKey] = this.component.source.slots[slotKey](this)
+                this.slots[slotKey] = () => this.component.source.slots[slotKey](this)
             }
         }
 
@@ -332,10 +332,10 @@ export class Invoke extends Entity {
     onMorph(other: Entity) {
         if (this.component.morphMode == 0) {
             let changed = false
-            if (JSON.stringify(this.slots) !== JSON.stringify((other as Invoke).slots)) {
-                changed = true
-                this.slots = (other as Invoke).slots
-            }
+            // if (JSON.stringify(this.slots) !== JSON.stringify((other as Invoke).slots)) {
+            //     changed = true
+            //     this.slots = (other as Invoke).slots
+            // }
             if (JSON.stringify(this.props) !== JSON.stringify((other as Invoke).props)) {
                 changed = true
                 this.props = (other as Invoke).props

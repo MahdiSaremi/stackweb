@@ -2,6 +2,8 @@
 
 namespace StackWeb\Renderer;
 
+use StackWeb\Foundation\ComponentContainer;
+
 class DomRenderer
 {
 
@@ -31,6 +33,10 @@ class DomRenderer
                         }
                         break;
                 }
+            }
+            elseif ($item instanceof ComponentContainer && $item->component->renderApi)
+            {
+                $result .= $item->component->renderApi->call($item);
             }
         }
 

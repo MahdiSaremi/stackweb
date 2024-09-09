@@ -337,7 +337,27 @@ class SourceRendererDev implements SourceRenderer
         }
         elseif ($node instanceof _InvokeStruct)
         {
-            $out->append('todo'); // todo
+            $out->append("new StackWeb.Invoke(StackWebComponents[");
+            $this->renderValueCli($out, $node->name);
+            $out->append("](), {");
+            foreach ($node->props as $prop)
+            {
+                $out->append('[');
+                $this->renderValueCli($out, $prop->name);
+                $out->append(']: ');
+                $this->renderValueCli($out, $prop->value);
+                $out->append(', ');
+            }
+            $out->append('}, {');
+            foreach ($node->slots as $slot)
+            {
+                $out->append('[');
+                $this->renderValueCli($out, $slot->name);
+                $out->append(']: () => ');
+                $this->renderHtmlXNodesCli($out, $component, $slot->inner);
+                // $out->append(', ');
+            }
+            $out->append("}), ");
         }
     }
 
