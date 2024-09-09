@@ -16,6 +16,7 @@ use StackWeb\Compilers\Stack\Structs\_ComponentStateStruct;
 use StackWeb\Compilers\Stack\Structs\_ComponentStruct;
 use StackWeb\Compilers\Stack\Structs\_StackStruct;
 use StackWeb\Compilers\StringReader;
+use StackWeb\ComponentNaming;
 use StackWeb\Renderer\Builder\SourceBuilder;
 use StackWeb\Renderer\Builder\StringBuilder;
 use StackWeb\Renderer\Contracts\SourceRenderer;
@@ -38,7 +39,9 @@ class SourceRendererDev implements SourceRenderer
             $out->appendObject($component->name);
             $out->append(" => fn () => ");
 
+            $this->componentScope = new ComponentScope($this, $stack, $component);
             $this->renderComponent($out, $component);
+            unset($this->componentScope);
 
             $out->append(",\n");
         }
@@ -54,9 +57,8 @@ class SourceRendererDev implements SourceRenderer
 
     public function renderComponent(SourceBuilder $out, _ComponentStruct $component) : void
     {
-        $this->componentScope = new ComponentScope($this, $component);
         $out->append("\StackWeb\Foundation\Component::make(");
-        $out->appendObject($component->name);
+        $out->appendObject(ComponentNaming::implodeStack($this->getComponentScope()->stack->name, $component->name ?: null));
         $out->append(")\n");
 
         $this->renderComponentProps($out, $component);
@@ -69,8 +71,6 @@ class SourceRendererDev implements SourceRenderer
         $this->renderComponentApiResults($out, $component);
 
         $this->renderComponentDeps($out, $component);
-
-        unset($this->componentScope);
     }
 
 
@@ -295,7 +295,7 @@ class SourceRendererDev implements SourceRenderer
 
         $out->append("render: ($) => ");
         $this->renderHtmlXNodesCli($out, $component, $htmlX->nodes);
-        $out->append(", ");
+        // $out->append(", ");
 
         $out->append("})");
     }

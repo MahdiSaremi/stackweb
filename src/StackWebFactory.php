@@ -191,32 +191,60 @@ class StackWebFactory
 
     public function responsePage(string $component)
     {
-        $component = $this->invoke($component, [], []);
+        $componentName = $component;
+        $component = $this->invoke($componentName, [], []);
 
-        $content = '';
-
+        $app = null;
         if ($component->component->renderApi)
         {
-            $content .= $component->component->renderApi->call($component);
+            $app = $component->component->renderApi->call($component);
         }
 
         /** @var Component[] $depComponents */
         $depComponents = [];
         $this->extractRecursiveComponentDeps($component->component, $depComponents);
 
-        $content .= "<script>window.Components = {";
+        $js = "window.StackWebComponents = {";
         foreach ($depComponents as $dep)
         {
             if ($dep->renderCli)
             {
-                $content .= "[" . JsRenderer::render($dep->name) . "]: () => ";
-                $content .= $dep->renderCli->call($dep->getStatic());
-                $content .= ",";
+                $js .= "[" . JsRenderer::render($dep->name) . "]: () => ";
+                $js .= $dep->renderCli->call($dep->getStatic());
+                $js .= ",";
             }
         }
-        $content .= "}</script>";
+        $js .= "}";
 
-        return response($content);
+        return response(sprintf(
+            <<<'HTML'
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+                <meta http-equiv="X-UA-Compatible" content="ie=edge">
+                <title>Document</title>
+                %s
+            </head>
+            <body>
+                <div id="app">%s</div>
+                
+                <script>%s</script>
+                <script>
+                    window.root = new StackWeb.Root(new StackWeb.Group([
+                        new StackWeb.Invoke(window.StackWebComponents["%s"](), {}, {})
+                    ]))
+                    window.root.mount(null, null, document.getElementById("app"))
+                </script>
+            </body>
+            </html>
+            HTML,
+            '<script src="'.e(route('stackweb.js')).'"></script>',
+            $app,
+            $js,
+            e($componentName),
+        ));
     }
 
 }

@@ -4,6 +4,7 @@ namespace StackWeb\Renderer\Scope;
 
 use StackWeb\Compilers\ApiPhp\Structs\_ApiPhpStruct;
 use StackWeb\Compilers\Stack\Structs\_ComponentStruct;
+use StackWeb\Compilers\Stack\Structs\_StackStruct;
 use StackWeb\Renderer\Contracts\SourceRenderer;
 
 class ComponentScope
@@ -16,6 +17,7 @@ class ComponentScope
 
     public function __construct(
         public readonly SourceRenderer $renderer,
+        public readonly _StackStruct $stack,
         public readonly _ComponentStruct $component,
     )
     {
