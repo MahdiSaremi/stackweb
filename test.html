@@ -17,7 +17,7 @@
                 toggle: true,
                 toggle2: true,
             }),
-            slot: ($) => new StackWeb.Group([
+            render: ($) => new StackWeb.Group([
                 new StackWeb.Dom({
                     name: 'div',
                     attrs: {
@@ -48,7 +48,7 @@
     function Test() {
         return new StackWeb.Component({
             states: () => ({}),
-            slot: ($) => new StackWeb.Group([
+            render: ($) => new StackWeb.Group([
                 new StackWeb.HelloWorld(),
             ])
         })
@@ -57,7 +57,7 @@
     function Button() {
         return new StackWeb.Component({
             states: () => ({}),
-            slot: ($) => new StackWeb.Group([
+            render: ($) => new StackWeb.Group([
                 new StackWeb.Dom({
                     name: 'button',
                     attrs: {},
