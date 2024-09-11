@@ -1,36 +1,29 @@
 <?php
 
-use JsPhpize\Compiler\Compiler;
-use JsPhpize\JsPhpize;
-use JsPhpize\Parser\Parser;
-use StackWeb\Lexer\Js\JsLexer;
-use StackWeb\Lexer\Js\JsReader;
-
 require __DIR__ . '/vendor/autoload.php';
 
+// $a = [1, 2, 3];
 
-$reader = new JsReader(<<<JS
-    let x = function () {
-        return 20;
-    };
+// $x = &$a[0];
+// $y = &$a[0];
 
-    let y = 20
-        .toLower()
-        
-    let z = 30
-    
-    async function send() {
-        
-    }
-JS);
+// $x = $a[0];
+// $a[0] = &$x;
 
-$js = new JsLexer($reader);
+// $x = $a[0];
+// $a[0] = &$x;
 
-dd($js);
+// $x = 1000;
 
-// $js = new JsPhpize();
-//
-// $parser = new Parser($js, "let x = 20", null);
-// $block = $parser->parse();
-//
-// dd($block);
+// dump($a);
+// dd($x, $y);
+
+$a = [[1, 2, 3]];
+$b = [];
+$b[0] = &$a[0];
+
+$a[0][] = 4;
+$b[0][] = 5;
+$b[] = 100;
+
+dd($a, $b);

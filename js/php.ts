@@ -1,4 +1,5 @@
 import * as PhpFunctions from './php-functions'
+import {PHPRef} from "./php-types";
 
 export class Scope {
 
@@ -6,7 +7,9 @@ export class Scope {
     $this: Object
     vars: Object
 
-    constructor($static: string, $this: Object, vars: Object = {}) {
+    v: any
+
+    constructor($static: string = undefined, $this: Object = undefined, vars: Object = {}) {
         this.$static = $static
         this.$this = $this
         this.vars = vars
@@ -18,10 +21,21 @@ export class Scope {
                     return target.$this
                 }
 
-                return target.vars[p]
+                let value = target.vars[p]
+
+                if (value instanceof PHPRef) {
+                    return value.get()
+                }
+
+                return value
             },
 
             set(target: Scope, p: string | symbol, newValue: any, receiver: any): boolean {
+                if (target.vars[p] instanceof PHPRef) {
+                    target.vars[p].set(newValue)
+                    return true
+                }
+
                 target.vars[p] = newValue
                 return true
             },
@@ -32,7 +46,15 @@ export class Scope {
         })
     }
 
+    ref(name: string) {
+        let value = this.vars[name]
 
+        if (value instanceof PHPRef) {
+            return value
+        }
+
+        return this.vars[name] = new PHPRef(value)
+    }
 
 }
 
@@ -87,7 +109,7 @@ export class PHPUtils {
      * @param right
      */
     static opAdd(left: any, right: any) {
-
+        return this.toNumber(left) + this.toNumber(right)
     }
 
     /**
@@ -97,7 +119,7 @@ export class PHPUtils {
      * @param right
      */
     static opSub(left: any, right: any) {
-
+        return this.toNumber(left) - this.toNumber(right)
     }
 
     /**
@@ -107,7 +129,7 @@ export class PHPUtils {
      * @param right
      */
     static opMul(left: any, right: any) {
-
+        return this.toNumber(left) * this.toNumber(right)
     }
 
     /**
@@ -117,7 +139,7 @@ export class PHPUtils {
      * @param right
      */
     static opDiv(left: any, right: any) {
-
+        return this.toNumber(left) / this.toNumber(right)
     }
 
     /**
@@ -127,17 +149,97 @@ export class PHPUtils {
      * @param right
      */
     static opDot(left: any, right: any) {
-
+        return this.toString(left) + this.toString(right)
     }
 
-    static isInt(left: any, right: any) {
+    static getType(value: any) : string {
+        switch (typeof value) {
+            case "undefined":
+                return "null"
 
+            case "number":
+                return "double"
+
+            case "bigint":
+                return "integer"
+
+            case "boolean":
+                return "boolean"
+
+            case "string":
+                return "string"
+
+            case "object":
+                if (value === null) {
+                    return "null"
+                }
+
+                if (value instanceof Array) {
+                    return "array"
+                }
+
+                return "object"
+
+            case "function":
+            case "symbol":
+            default:
+                return "object"
+        }
+    }
+
+    static toNumber(value: any) {
+        let type = typeof value
+
+        switch (type)
+        {
+            case "bigint":
+            case "number":
+                return value
+
+            case "boolean":
+                return value ? 1 : 0
+
+            case "undefined":
+                return 0
+
+            case "object":
+                return value === null ? 1 : 0
+
+            case "string":
+                return +value
+
+            default:
+                return 1
+        }
+    }
+
+    static toString(value: any) {
+        let type = typeof value
+
+        switch (type)
+        {
+            case "bigint":
+            case "number":
+                return '' + value
+
+            case "boolean":
+                return value ? '1' : ''
+
+            case "undefined":
+                return ''
+
+            case "object":
+                return value === null ? '' : 'object'
+
+            default:
+                return 'object'
+        }
     }
 
 }
 
 export let PHP = {
-    Functions: PhpFunctions,
+    functions: PhpFunctions,
 }
 
 // @ts-ignore

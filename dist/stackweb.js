@@ -12,8 +12,6 @@
     is_bool: () => is_bool,
     is_double: () => is_double,
     is_float: () => is_float,
-    is_int: () => is_int,
-    is_integer: () => is_integer,
     is_null: () => is_null,
     is_object: () => is_object,
     is_string: () => is_string
@@ -21,63 +19,115 @@
   function gettype($params) {
     let value = $params.next("value");
     $params.end();
-    if (value === null) {
-      return "null";
-    }
-    switch (typeof value) {
-      case "undefined":
-        return "null";
-      case "number":
-        return "float";
-      case "bigint":
-        return "int";
-      case "boolean":
-        return "bool";
-      case "string":
-        return "string";
-      case "object":
-      case "function":
-      case "symbol":
-      default:
-        return "object";
-    }
+    return PHPUtils.getType(value);
   }
-  function is_int($params) {
-    let value = $params.next("value");
-    $params.end();
-    return typeof value === "bigint";
-  }
-  var is_integer = is_int;
   function is_float($params) {
     let value = $params.next("value");
     $params.end();
-    return typeof value === "number";
+    return PHPUtils.getType(value) === "double";
   }
   var is_double = is_float;
   function is_bool($params) {
     let value = $params.next("value");
     $params.end();
-    return typeof value === "boolean";
+    return PHPUtils.getType(value) === "boolean";
   }
   function is_null($params) {
     let value = $params.next("value");
     $params.end();
-    return value === void 0 || value === null;
+    return PHPUtils.getType(value) === "null";
   }
   function is_object($params) {
     let value = $params.next("value");
     $params.end();
-    return gettype(value) === "object";
+    return PHPUtils.getType(value) === "object";
   }
   function is_string($params) {
     let value = $params.next("value");
     $params.end();
-    return typeof value === "string";
+    return PHPUtils.getType(value) === "string";
   }
 
   // js/php.ts
+  var PHPUtils = class {
+    static opAdd(left, right) {
+      return this.toNumber(left) + this.toNumber(right);
+    }
+    static opSub(left, right) {
+      return this.toNumber(left) - this.toNumber(right);
+    }
+    static opMul(left, right) {
+      return this.toNumber(left) * this.toNumber(right);
+    }
+    static opDiv(left, right) {
+      return this.toNumber(left) / this.toNumber(right);
+    }
+    static opDot(left, right) {
+      return this.toString(left) + this.toString(right);
+    }
+    static getType(value) {
+      switch (typeof value) {
+        case "undefined":
+          return "null";
+        case "number":
+          return "double";
+        case "bigint":
+          return "integer";
+        case "boolean":
+          return "boolean";
+        case "string":
+          return "string";
+        case "object":
+          if (value === null) {
+            return "null";
+          }
+          if (value instanceof Array) {
+            return "array";
+          }
+          return "object";
+        case "function":
+        case "symbol":
+        default:
+          return "object";
+      }
+    }
+    static toNumber(value) {
+      let type = typeof value;
+      switch (type) {
+        case "bigint":
+        case "number":
+          return value;
+        case "boolean":
+          return value ? 1 : 0;
+        case "undefined":
+          return 0;
+        case "object":
+          return value === null ? 1 : 0;
+        case "string":
+          return +value;
+        default:
+          return 1;
+      }
+    }
+    static toString(value) {
+      let type = typeof value;
+      switch (type) {
+        case "bigint":
+        case "number":
+          return "" + value;
+        case "boolean":
+          return value ? "1" : "";
+        case "undefined":
+          return "";
+        case "object":
+          return value === null ? "" : "object";
+        default:
+          return "object";
+      }
+    }
+  };
   var PHP = {
-    Functions: php_functions_exports
+    functions: php_functions_exports
   };
   window.PHP = PHP;
 
