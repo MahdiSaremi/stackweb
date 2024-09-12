@@ -3,27 +3,28 @@
 require __DIR__ . '/vendor/autoload.php';
 
 // $a = [1, 2, 3];
-
-// $x = &$a[0];
+// $x = &$a[1];
+// $b = $a;
 // $y = &$a[0];
+//
+// $b[0] = 1000;
+// $b[1] = 2000;
+// dump($a, $x, $y, $b);
 
-// $x = $a[0];
-// $a[0] = &$x;
+// $a = array_merge([1, 2, 3], [4, 5, 6, 7]);
+$a = array_replace([1, 2, 3], [4, 5, 6, 7]);
 
-// $x = $a[0];
-// $a[0] = &$x;
+dd($a);
 
-// $x = 1000;
-
-// dump($a);
-// dd($x, $y);
-
-$a = [[1, 2, 3]];
-$b = [];
-$b[0] = &$a[0];
-
-$a[0][] = 4;
-$b[0][] = 5;
-$b[] = 100;
-
-dd($a, $b);
+class x{
+    public int $a;
+}
+class y{
+    public string $a;
+}
+$x = new x;
+$y = new y;
+$i = '';
+$x->a = 1000;
+$y->a = &$x->a;
+dump($x, $i);

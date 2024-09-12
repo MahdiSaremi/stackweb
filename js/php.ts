@@ -1,5 +1,5 @@
 import * as PhpFunctions from './php-functions'
-import {PHPRef} from "./php-types";
+import {PHPArray, PHPRef} from "./php-types";
 
 export class Scope {
 
@@ -7,7 +7,8 @@ export class Scope {
     $this: Object
     vars: Object
 
-    v: any
+    // @ts-ignore
+    v: Proxy
 
     constructor($static: string = undefined, $this: Object = undefined, vars: Object = {}) {
         this.$static = $static
@@ -152,7 +153,7 @@ export class PHPUtils {
         return this.toString(left) + this.toString(right)
     }
 
-    static getType(value: any) : string {
+    static getType(value: any): string {
         switch (typeof value) {
             case "undefined":
                 return "null"
@@ -187,7 +188,7 @@ export class PHPUtils {
         }
     }
 
-    static toNumber(value: any) {
+    static toNumber(value: any): number {
         let type = typeof value
 
         switch (type)
@@ -206,14 +207,15 @@ export class PHPUtils {
                 return value === null ? 1 : 0
 
             case "string":
-                return +value
+                let num = +value
+                return isNaN(num) ? 0 : num
 
             default:
                 return 1
         }
     }
 
-    static toString(value: any) {
+    static toString(value: any): string {
         let type = typeof value
 
         switch (type)
@@ -221,6 +223,9 @@ export class PHPUtils {
             case "bigint":
             case "number":
                 return '' + value
+
+            case "string":
+                return value
 
             case "boolean":
                 return value ? '1' : ''
@@ -236,6 +241,46 @@ export class PHPUtils {
         }
     }
 
+    static toBool(value: any): boolean {
+        let type = typeof value
+
+        switch (type)
+        {
+            case "bigint":
+            case "number":
+                return value != 0;
+
+            case "string":
+                return value != "" && value != "0"
+
+            case "boolean":
+                return value
+
+            case "undefined":
+                return false
+
+            case "object":
+                return value !== null
+
+            default:
+                return true
+        }
+    }
+
+    static isNumeric(value: any): boolean {
+        let type = typeof value
+
+        if (type == "bigint" || type == "number") {
+            return true
+        }
+
+        if (type != "string") {
+            return false
+        }
+
+        return !isNaN(value) && !isNaN(+value)
+    }
+
 }
 
 export let PHP = {
@@ -243,4 +288,14 @@ export let PHP = {
 }
 
 // @ts-ignore
-window.PHP = PHP
+window.P = PHP
+
+// @ts-ignore
+window.Test = () => {
+    let local: Scope = new Scope(), v = local.v
+    v.a = PHPArray.fromObject({0: 1, 1: 2, 2: 3})
+    v.a.set('4', 5)
+    v.a.push(5)
+
+    console.log(v.a)
+}

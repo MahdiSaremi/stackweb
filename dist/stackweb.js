@@ -48,7 +48,183 @@
     return PHPUtils.getType(value) === "string";
   }
 
+  // js/php-types.ts
+  var PHPRef = class {
+    constructor(value = void 0) {
+      this.value = value;
+    }
+    set(value) {
+      if (this.value instanceof PHPRef) {
+        return this.value.set(value);
+      }
+      this.value = value;
+    }
+    get() {
+      if (this.value instanceof PHPRef) {
+        return this.value.get();
+      }
+      return this.value;
+    }
+  };
+  var PHPArray = class {
+    constructor(map, keys, high) {
+      this.map = map;
+      this.keys = keys;
+      this.high = high;
+    }
+    static fromEmpty() {
+      return new PHPArray(/* @__PURE__ */ new Map(), [], -1);
+    }
+    static fromArray(array) {
+      let map = /* @__PURE__ */ new Map();
+      let keys = [];
+      array.forEach((value, index) => {
+        map.set(index, value);
+        keys.push(index);
+      });
+      return new PHPArray(map, keys, array.length - 1);
+    }
+    static fromMap(map) {
+      let keys = [];
+      let high = -1;
+      for (const key in map.keys()) {
+        keys.push(key);
+        if (typeof key == "number" && key > high) {
+          high = key;
+        }
+      }
+      return new PHPArray(map, keys, high);
+    }
+    static fromObject(object) {
+      let map = /* @__PURE__ */ new Map();
+      let keys = [];
+      let high = -1;
+      for (let key in object) {
+        let num = +key;
+        if (!isNaN(num)) {
+          key = num;
+        }
+        map.set(key, object[key]);
+        keys.push(key);
+        if (typeof key == "number" && key > high) {
+          high = key;
+        }
+      }
+      return new PHPArray(map, keys, high);
+    }
+    push(value) {
+      this.high++;
+      if (this.map.has(this.high)) {
+        this.map.set(this.high, value);
+        return;
+      }
+      this.map.set(this.high, value);
+      this.keys.push(this.high);
+    }
+    pop() {
+      if (this.keys.length == 0) {
+        return null;
+      }
+      let last = this.keys.pop();
+      let pop = this.map.get(last);
+      this.map.delete(last);
+      if (last === this.high) {
+        this.high--;
+      }
+      return pop;
+    }
+    set(key, value) {
+      if (typeof key == "string") {
+        let num = +key;
+        if (!isNaN(num)) {
+          key = num;
+        }
+      }
+      if (typeof key == "number") {
+        if (key == this.high + 1) {
+          this.push(value);
+          return;
+        } else if (key > this.high) {
+          this.high = key;
+        }
+      }
+      if (this.map.has(key)) {
+        this.map.set(key, value);
+        return;
+      }
+      this.map.set(key, value);
+      this.keys.push(key);
+    }
+    get(key) {
+      if (typeof key == "string") {
+        let num = +key;
+        if (!isNaN(num)) {
+          key = num;
+        }
+      }
+      return this.map.get(key);
+    }
+    plus(array) {
+      this.high = this.high > array.high ? this.high : array.high;
+      array.map.forEach((value, key) => {
+        if (!this.map.has(key)) {
+          this.map.set(key, value);
+          this.keys.push(key);
+        }
+      });
+    }
+    replace(array) {
+      this.high = this.high > array.high ? this.high : array.high;
+      array.map.forEach((value, key) => {
+        this.set(key, value);
+      });
+    }
+    merge(array) {
+      this.high = this.high > array.high ? this.high : array.high;
+      array.map.forEach((value, key) => {
+        this.set(key, value);
+      });
+    }
+  };
+
   // js/php.ts
+  var Scope = class {
+    constructor($static = void 0, $this = void 0, vars = {}) {
+      this.$static = $static;
+      this.$this = $this;
+      this.vars = vars;
+      this.v = new Proxy(this, {
+        get(target, p, receiver) {
+          if (p == "this") {
+            return target.$this;
+          }
+          let value = target.vars[p];
+          if (value instanceof PHPRef) {
+            return value.get();
+          }
+          return value;
+        },
+        set(target, p, newValue, receiver) {
+          if (target.vars[p] instanceof PHPRef) {
+            target.vars[p].set(newValue);
+            return true;
+          }
+          target.vars[p] = newValue;
+          return true;
+        },
+        has(target, p) {
+          return target.vars[p] !== void 0;
+        }
+      });
+    }
+    ref(name) {
+      let value = this.vars[name];
+      if (value instanceof PHPRef) {
+        return value;
+      }
+      return this.vars[name] = new PHPRef(value);
+    }
+  };
   var PHPUtils = class {
     static opAdd(left, right) {
       return this.toNumber(left) + this.toNumber(right);
@@ -104,7 +280,8 @@
         case "object":
           return value === null ? 1 : 0;
         case "string":
-          return +value;
+          let num = +value;
+          return isNaN(num) ? 0 : num;
         default:
           return 1;
       }
@@ -115,6 +292,8 @@
         case "bigint":
         case "number":
           return "" + value;
+        case "string":
+          return value;
         case "boolean":
           return value ? "1" : "";
         case "undefined":
@@ -125,11 +304,46 @@
           return "object";
       }
     }
+    static toBool(value) {
+      let type = typeof value;
+      switch (type) {
+        case "bigint":
+        case "number":
+          return value != 0;
+        case "string":
+          return value != "" && value != "0";
+        case "boolean":
+          return value;
+        case "undefined":
+          return false;
+        case "object":
+          return value !== null;
+        default:
+          return true;
+      }
+    }
+    static isNumeric(value) {
+      let type = typeof value;
+      if (type == "bigint" || type == "number") {
+        return true;
+      }
+      if (type != "string") {
+        return false;
+      }
+      return !isNaN(value) && !isNaN(+value);
+    }
   };
   var PHP = {
     functions: php_functions_exports
   };
-  window.PHP = PHP;
+  window.P = PHP;
+  window.Test = () => {
+    let local = new Scope(), v = local.v;
+    v.a = PHPArray.fromObject({ 0: 1, 1: 2, 2: 3 });
+    v.a.set("4", 5);
+    v.a.push(5);
+    console.log(v.a);
+  };
 
   // js/index.ts
   var Entity = class {
