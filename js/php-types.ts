@@ -29,12 +29,12 @@ export class PHPArray {
     // @ts-ignore
     public map: Map
 
-    public keys: Array<number|string>
+    public keys: Array<number | string>
 
     public high: number
 
     // @ts-ignore
-    constructor(map: Map, keys: Array<number|string>, high: number) {
+    constructor(map: Map, keys: Array<number | string>, high: number) {
         this.map = map
         this.keys = keys
         this.high = high
@@ -58,7 +58,7 @@ export class PHPArray {
     }
 
     // @ts-ignore
-    static fromMap(map: Map<string|number, any>): PHPArray {
+    static fromMap(map: Map<string | number, any>): PHPArray {
         let keys = []
         let high = -1
         for (const key in map.keys()) {
@@ -94,6 +94,11 @@ export class PHPArray {
         return new PHPArray(map, keys, high)
     }
 
+    copy(): PHPArray {
+        // @ts-ignore
+        return new PHPArray(new Map(this.map), [...this.keys], this.high)
+    }
+
     push(value: any) {
         this.high++
 
@@ -122,7 +127,7 @@ export class PHPArray {
         return pop
     }
 
-    set(key: string|number, value: any) {
+    setReal(key: string | number, value: any) {
         if (typeof key == "string") {
             let num = +key
             if (!isNaN(num)) {
@@ -134,8 +139,7 @@ export class PHPArray {
             if (key == this.high + 1) {
                 this.push(value)
                 return
-            }
-            else if (key > this.high) {
+            } else if (key > this.high) {
                 this.high = key
             }
         }
@@ -149,7 +153,24 @@ export class PHPArray {
         this.keys.push(key)
     }
 
-    get(key: string|number) {
+    set(key: string | number, value: any) {
+        if (typeof key == "string") {
+            let num = +key
+            if (!isNaN(num)) {
+                key = num
+            }
+        }
+
+        let old = this.map.get(key)
+
+        if (old instanceof PHPRef) {
+            old.set(value)
+        }
+
+        this.setReal(key, value)
+    }
+
+    getReal(key: string | number) {
         if (typeof key == "string") {
             let num = +key
             if (!isNaN(num)) {
@@ -158,6 +179,16 @@ export class PHPArray {
         }
 
         return this.map.get(key)
+    }
+
+    get(key: string | number) {
+        let value = this.getReal(key)
+
+        if (value instanceof PHPRef) {
+            return value.get()
+        }
+
+        return value
     }
 
     plus(array: PHPArray) {
@@ -177,11 +208,27 @@ export class PHPArray {
         })
     }
 
-    merge(array: PHPArray) { // todo
+    merge(array: PHPArray) {
         this.high = this.high > array.high ? this.high : array.high
         array.map.forEach((value, key) => {
-            this.set(key, value)
+            if (isNaN(+key)) {
+                this.set(key, value)
+            } else {
+                this.push(value)
+            }
         })
+    }
+
+    count() {
+        return this.keys.length
+    }
+
+    ref(key: string | number) {
+        let value = this.get(key)
+        let ref = new PHPRef(value)
+        this.set(key, ref)
+
+        return ref
     }
 
 }

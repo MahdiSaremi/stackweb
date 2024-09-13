@@ -12,7 +12,8 @@ require __DIR__ . '/vendor/autoload.php';
 // dump($a, $x, $y, $b);
 
 // $a = array_merge([1, 2, 3], [4, 5, 6, 7]);
-$a = array_replace([1, 2, 3], [4, 5, 6, 7]);
+// $a = [1, 2, 3, ...[3 => 4, 2 => 5]];
+$a = [1, 2, 3] + [4, 5, 6];
 
 dd($a);
 

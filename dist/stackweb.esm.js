@@ -8,44 +8,16 @@ var __export = (target, all) => {
 var php_functions_exports = {};
 __export(php_functions_exports, {
   gettype: () => gettype,
+  is_array: () => is_array,
   is_bool: () => is_bool,
   is_double: () => is_double,
   is_float: () => is_float,
   is_null: () => is_null,
   is_object: () => is_object,
-  is_string: () => is_string
+  is_string: () => is_string,
+  strlen: () => strlen,
+  substr: () => substr
 });
-function gettype($params) {
-  let value = $params.next("value");
-  $params.end();
-  return PHPUtils.getType(value);
-}
-function is_float($params) {
-  let value = $params.next("value");
-  $params.end();
-  return PHPUtils.getType(value) === "double";
-}
-var is_double = is_float;
-function is_bool($params) {
-  let value = $params.next("value");
-  $params.end();
-  return PHPUtils.getType(value) === "boolean";
-}
-function is_null($params) {
-  let value = $params.next("value");
-  $params.end();
-  return PHPUtils.getType(value) === "null";
-}
-function is_object($params) {
-  let value = $params.next("value");
-  $params.end();
-  return PHPUtils.getType(value) === "object";
-}
-function is_string($params) {
-  let value = $params.next("value");
-  $params.end();
-  return PHPUtils.getType(value) === "string";
-}
 
 // js/php-types.ts
 var PHPRef = class {
@@ -111,6 +83,9 @@ var PHPArray = class {
     }
     return new PHPArray(map, keys, high);
   }
+  copy() {
+    return new PHPArray(new Map(this.map), [...this.keys], this.high);
+  }
   push(value) {
     this.high++;
     if (this.map.has(this.high)) {
@@ -132,7 +107,7 @@ var PHPArray = class {
     }
     return pop;
   }
-  set(key, value) {
+  setReal(key, value) {
     if (typeof key == "string") {
       let num = +key;
       if (!isNaN(num)) {
@@ -154,7 +129,20 @@ var PHPArray = class {
     this.map.set(key, value);
     this.keys.push(key);
   }
-  get(key) {
+  set(key, value) {
+    if (typeof key == "string") {
+      let num = +key;
+      if (!isNaN(num)) {
+        key = num;
+      }
+    }
+    let old = this.map.get(key);
+    if (old instanceof PHPRef) {
+      old.set(value);
+    }
+    this.setReal(key, value);
+  }
+  getReal(key) {
     if (typeof key == "string") {
       let num = +key;
       if (!isNaN(num)) {
@@ -162,6 +150,13 @@ var PHPArray = class {
       }
     }
     return this.map.get(key);
+  }
+  get(key) {
+    let value = this.getReal(key);
+    if (value instanceof PHPRef) {
+      return value.get();
+    }
+    return value;
   }
   plus(array) {
     this.high = this.high > array.high ? this.high : array.high;
@@ -181,8 +176,123 @@ var PHPArray = class {
   merge(array) {
     this.high = this.high > array.high ? this.high : array.high;
     array.map.forEach((value, key) => {
-      this.set(key, value);
+      if (isNaN(+key)) {
+        this.set(key, value);
+      } else {
+        this.push(value);
+      }
     });
+  }
+  count() {
+    return this.keys.length;
+  }
+  ref(key) {
+    let value = this.get(key);
+    let ref = new PHPRef(value);
+    this.set(key, ref);
+    return ref;
+  }
+};
+
+// js/php-functions.ts
+function gettype($params) {
+  let value = $params.next("value");
+  $params.end();
+  return PHPUtils.getType(value);
+}
+function is_float($params) {
+  let value = $params.next("value");
+  $params.end();
+  return PHPUtils.getType(value) === "double";
+}
+var is_double = is_float;
+function is_bool($params) {
+  let value = $params.next("value");
+  $params.end();
+  return PHPUtils.getType(value) === "boolean";
+}
+function is_null($params) {
+  let value = $params.next("value");
+  $params.end();
+  return PHPUtils.getType(value) === "null";
+}
+function is_object($params) {
+  let value = $params.next("value");
+  $params.end();
+  return PHPUtils.getType(value) === "object";
+}
+function is_string($params) {
+  let value = $params.next("value");
+  $params.end();
+  return PHPUtils.getType(value) === "string";
+}
+function is_array($params) {
+  let value = $params.next("value");
+  $params.end();
+  return value instanceof PHPArray;
+}
+function strlen($params) {
+  let string = PHPUtils.toString($params.next("string"));
+  $params.end();
+  return Shared.defaultString.len(string);
+}
+function substr($params) {
+  let string = PHPUtils.toString($params.next("string"));
+  let offset = PHPUtils.toNumber($params.next("offset"));
+  let length = $params.next("length", null);
+  $params.end();
+  if (length !== null) {
+    length = PHPUtils.toNumber(length);
+  }
+  return;
+}
+
+// js/php-string.ts
+var PHPString = class {
+  constructor(encoder, decoder) {
+    this.encoder = encoder;
+    this.decoder = decoder;
+  }
+  len(value) {
+    let encoded = this.encoder.encode(value);
+    let result = 0;
+    for (let i = 0; i < encoded.length; i++) {
+      result += this.decoder.decode(encoded.slice(i, i + 1)).length;
+    }
+    return result;
+  }
+  substr(value, offset, length) {
+  }
+  split(value) {
+    let encoded = this.encoder.encode(value);
+    let result = new Array(encoded.length);
+    for (let i = 0; i < encoded.length; i++) {
+      result[i] = this.decoder.decode(encoded.slice(i, i + 1));
+    }
+    return result;
+  }
+  splitCharsToString(value) {
+    let array = new Uint8Array(value.length);
+    for (const key in value) {
+      array[key] = this.encoder.encode(value[key])[0];
+    }
+    return this.decoder.decode(array);
+  }
+  splitToString(value) {
+    let array = new Array(value.length);
+    let length = 0;
+    for (const key in value) {
+      array[key] = this.encoder.encode(value[key]);
+      length += array[key].length;
+    }
+    let out = new Uint8Array(length);
+    let i = 0;
+    for (const key in array) {
+      for (const key2 in array[key]) {
+        out[i++] = array[key][key2];
+      }
+    }
+    return this.decoder.decode(out);
   }
 };
 
@@ -224,8 +334,42 @@ var Scope = class {
     return this.vars[name] = new PHPRef(value);
   }
 };
+var Params2 = class {
+  constructor(values, $this = void 0, $static = void 0) {
+    this.$this = $this;
+    this.$static = $static;
+    this.values = values;
+    this.i = 0;
+  }
+  next(name, defaults = void 0) {
+    if (this.values[name] !== void 0) {
+      let value = this.values[name];
+      delete this.values[name];
+      return value;
+    }
+    if (this.values[this.i] !== void 0) {
+      let value = this.values[this.i++];
+      delete this.values[name];
+      return value;
+    }
+    if (defaults instanceof Function) {
+      return defaults();
+    }
+    if (defaults !== void 0) {
+      return defaults;
+    }
+    throw new Error(`Parameter ${name} not passed`);
+  }
+  end() {
+  }
+};
 var PHPUtils = class {
   static opAdd(left, right) {
+    if (left instanceof PHPArray) {
+      let newArray = left.copy();
+      newArray.plus(this.toArray(right));
+      return newArray;
+    }
     return this.toNumber(left) + this.toNumber(right);
   }
   static opSub(left, right) {
@@ -241,6 +385,9 @@ var PHPUtils = class {
     return this.toString(left) + this.toString(right);
   }
   static getType(value) {
+    if (value instanceof PHPRef) {
+      value = value.get();
+    }
     switch (typeof value) {
       case "undefined":
         return "null";
@@ -256,6 +403,9 @@ var PHPUtils = class {
         if (value === null) {
           return "null";
         }
+        if (value instanceof PHPArray) {
+          return "array";
+        }
         if (value instanceof Array) {
           return "array";
         }
@@ -267,6 +417,9 @@ var PHPUtils = class {
     }
   }
   static toNumber(value) {
+    if (value instanceof PHPRef) {
+      value = value.get();
+    }
     let type = typeof value;
     switch (type) {
       case "bigint":
@@ -286,6 +439,9 @@ var PHPUtils = class {
     }
   }
   static toString(value) {
+    if (value instanceof PHPRef) {
+      value = value.get();
+    }
     let type = typeof value;
     switch (type) {
       case "bigint":
@@ -298,12 +454,21 @@ var PHPUtils = class {
       case "undefined":
         return "";
       case "object":
-        return value === null ? "" : "object";
+        if (value === null) {
+          return "";
+        }
+        if (value instanceof PHPArray) {
+          return "Array";
+        }
+        return "object";
       default:
         return "object";
     }
   }
   static toBool(value) {
+    if (value instanceof PHPRef) {
+      value = value.get();
+    }
     let type = typeof value;
     switch (type) {
       case "bigint":
@@ -316,12 +481,18 @@ var PHPUtils = class {
       case "undefined":
         return false;
       case "object":
+        if (value instanceof PHPArray) {
+          return value.count() > 0;
+        }
         return value !== null;
       default:
         return true;
     }
   }
   static isNumeric(value) {
+    if (value instanceof PHPRef) {
+      value = value.get();
+    }
     let type = typeof value;
     if (type == "bigint" || type == "number") {
       return true;
@@ -331,17 +502,49 @@ var PHPUtils = class {
     }
     return !isNaN(value) && !isNaN(+value);
   }
+  static toArray(value) {
+    if (value instanceof PHPRef) {
+      value = value.get();
+    }
+    let type = typeof value;
+    if (value instanceof PHPArray) {
+      return value;
+    }
+    switch (type) {
+      case "string":
+        return PHPArray.fromArray(new Array(...value));
+      default:
+        return PHPArray.fromEmpty();
+    }
+  }
+  static callFunction(name, params) {
+    name = name.toLowerCase();
+    let fn = Shared.functions[name];
+    if (fn) {
+      return this.callJsFunction(fn, params);
+    } else {
+      throw new Error(`Function [${name}] is not exists`);
+    }
+  }
+  static callJsFunction(func, params) {
+    return func(params);
+  }
 };
-var PHP = {
-  functions: php_functions_exports
+var PHP = {};
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
+var defaultString = new PHPString(textEncoder, textDecoder);
+var Shared = {
+  functions: php_functions_exports,
+  textEncoder,
+  textDecoder,
+  defaultString
 };
 window.P = PHP;
 window.Test = () => {
   let local = new Scope(), v = local.v;
-  v.a = PHPArray.fromObject({ 0: 1, 1: 2, 2: 3 });
-  v.a.set("4", 5);
-  v.a.push(5);
-  console.log(v.a);
+  v.c = PHPUtils.callFunction("strlen", new Params2({ 0: "\u0633\u0644\u0627\u0645" }));
+  console.log(v.c);
 };
 
 // js/index.ts
