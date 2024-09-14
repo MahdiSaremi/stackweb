@@ -15,8 +15,11 @@ __export(php_functions_exports, {
   is_null: () => is_null,
   is_object: () => is_object,
   is_string: () => is_string,
+  ltrim: () => ltrim,
+  rtrim: () => rtrim,
   strlen: () => strlen,
-  substr: () => substr
+  substr: () => substr,
+  trim: () => trim
 });
 
 // js/php-types.ts
@@ -244,14 +247,50 @@ function substr($params) {
   if (length !== null) {
     length = PHPUtils.toNumber(length);
   }
-  return;
+  return Shared.defaultString.substr(string, offset, length);
+}
+function trim($params) {
+  let string = PHPUtils.toString($params.next("string"));
+  let characters = PHPUtils.toString($params.next("characters", " \n\r	\v\0"));
+  $params.end();
+  return Shared.defaultString.trim(string, characters);
+}
+function ltrim($params) {
+  let string = PHPUtils.toString($params.next("string"));
+  let characters = PHPUtils.toString($params.next("characters", " \n\r	\v\0"));
+  $params.end();
+  return Shared.defaultString.ltrim(string, characters);
+}
+function rtrim($params) {
+  let string = PHPUtils.toString($params.next("string"));
+  let characters = PHPUtils.toString($params.next("characters", " \n\r	\v\0"));
+  $params.end();
+  return Shared.defaultString.rtrim(string, characters);
 }
 
-// js/php-string.ts
+// js/php-strings.ts
 var PHPString = class {
   constructor(encoder, decoder) {
     this.encoder = encoder;
     this.decoder = decoder;
+  }
+  standardSubParams(offset, length, strLength) {
+    while (offset < 0) {
+      offset = strLength + offset;
+    }
+    if (offset >= strLength) {
+      return [0, 0];
+    }
+    if (length !== null) {
+      if (length < 0) {
+        return [0, 0];
+      }
+      let end = offset + length;
+      if (end >= strLength) {
+        length -= end - strLength;
+      }
+    }
+    return [offset, length];
   }
   len(value) {
     let encoded = this.encoder.encode(value);
@@ -262,6 +301,15 @@ var PHPString = class {
     return result;
   }
   substr(value, offset, length) {
+    let encoded = this.encoder.encode(value);
+    [offset, length] = this.standardSubParams(offset, length, encoded.length);
+    let slice;
+    if (length === null) {
+      slice = encoded.slice(offset, encoded.length);
+    } else {
+      slice = encoded.slice(offset, offset + length);
+    }
+    return this.decoder.decode(slice);
   }
   split(value) {
     let encoded = this.encoder.encode(value);
@@ -293,6 +341,44 @@ var PHPString = class {
       }
     }
     return this.decoder.decode(out);
+  }
+  trim(value, characters) {
+    let str = this.encoder.encode(value);
+    let chars = this.encoder.encode(characters);
+    let start, end;
+    for (start = 0; start < str.length; start++) {
+      if (chars.indexOf(str[start]) < 0) {
+        break;
+      }
+    }
+    for (end = str.length - 1; end > start; end--) {
+      if (chars.indexOf(str[end]) < 0) {
+        break;
+      }
+    }
+    return this.decoder.decode(str.slice(start, end + 1));
+  }
+  ltrim(value, characters) {
+    let str = this.encoder.encode(value);
+    let chars = this.encoder.encode(characters);
+    let start;
+    for (start = 0; start < str.length; start++) {
+      if (chars.indexOf(str[start]) < 0) {
+        break;
+      }
+    }
+    return this.decoder.decode(str.slice(start, str.length));
+  }
+  rtrim(value, characters) {
+    let str = this.encoder.encode(value);
+    let chars = this.encoder.encode(characters);
+    let end;
+    for (end = str.length - 1; end >= 0; end--) {
+      if (chars.indexOf(str[end]) < 0) {
+        break;
+      }
+    }
+    return this.decoder.decode(str.slice(0, end + 1));
   }
 };
 
@@ -543,8 +629,8 @@ var Shared = {
 window.P = PHP;
 window.Test = () => {
   let local = new Scope(), v = local.v;
-  v.c = PHPUtils.callFunction("strlen", new Params2({ 0: "\u0633\u0644\u0627\u0645" }));
-  console.log(v.c);
+  v.c = PHPUtils.callFunction("trim", new Params2({ 0: " \n\n 	 g jk \n \r \0 " }));
+  console.log(v.c, v.c.length);
 };
 
 // js/index.ts

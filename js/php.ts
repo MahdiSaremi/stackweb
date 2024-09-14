@@ -1,6 +1,6 @@
 import * as PhpFunctions from './php-functions'
 import {PHPArray, PHPRef} from "./php-types";
-import {PHPString} from "./php-string";
+import {PHPString} from "./php-strings";
 
 export class Scope {
 
@@ -388,7 +388,7 @@ window.P = PHP
 // @ts-ignore
 window.Test = () => {
     let local: Scope = new Scope(), v = local.v
-    v.c = PHPUtils.callFunction("strlen", new Params({0: "سلام"}))
+    v.c = PHPUtils.callFunction("trim", new Params({0: " \n\n \t g jk \n \r \0 "}))
 
-    console.log(v.c)
+    console.log(v.c, v.c.length)
 }

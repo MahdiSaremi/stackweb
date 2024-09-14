@@ -7,6 +7,7 @@
  */
 import {Params, PHPUtils, Shared} from "./php";
 import {PHPArray} from "./php-types";
+import {PHPString} from "./php-strings";
 
 export function gettype($params: Params) {
     let value = $params.next('value')
@@ -85,5 +86,29 @@ export function substr($params: Params) {
         length = PHPUtils.toNumber(length)
     }
 
-    return
+    return Shared.defaultString.substr(string, offset, length)
+}
+
+export function trim($params: Params) {
+    let string = PHPUtils.toString($params.next('string'))
+    let characters = PHPUtils.toString($params.next('characters', " \n\r\t\v\0"))
+    $params.end()
+
+    return Shared.defaultString.trim(string, characters)
+}
+
+export function ltrim($params: Params) {
+    let string = PHPUtils.toString($params.next('string'))
+    let characters = PHPUtils.toString($params.next('characters', " \n\r\t\v\0"))
+    $params.end()
+
+    return Shared.defaultString.ltrim(string, characters)
+}
+
+export function rtrim($params: Params) {
+    let string = PHPUtils.toString($params.next('string'))
+    let characters = PHPUtils.toString($params.next('characters', " \n\r\t\v\0"))
+    $params.end()
+
+    return Shared.defaultString.rtrim(string, characters)
 }
