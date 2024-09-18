@@ -232,6 +232,7 @@ class StackWebFactory
                 
                 <script>%s</script>
                 <script>
+                    document.getElementById("app").innerHTML = "" // todo: remove to see the ssr
                     window.root = new StackWeb.Root(new StackWeb.Group([
                         new StackWeb.Invoke(window.StackWebComponents["%s"](), {}, {})
                     ]))

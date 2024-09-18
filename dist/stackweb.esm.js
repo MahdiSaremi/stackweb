@@ -413,40 +413,16 @@ var Scope = class {
     });
   }
   ref(name) {
+    name = PHPUtils.toString(name);
     let value = this.vars[name];
     if (value instanceof PHPRef) {
       return value;
     }
     return this.vars[name] = new PHPRef(value);
   }
-};
-var Params2 = class {
-  constructor(values, $this = void 0, $static = void 0) {
-    this.$this = $this;
-    this.$static = $static;
-    this.values = values;
-    this.i = 0;
-  }
-  next(name, defaults = void 0) {
-    if (this.values[name] !== void 0) {
-      let value = this.values[name];
-      delete this.values[name];
-      return value;
-    }
-    if (this.values[this.i] !== void 0) {
-      let value = this.values[this.i++];
-      delete this.values[name];
-      return value;
-    }
-    if (defaults instanceof Function) {
-      return defaults();
-    }
-    if (defaults !== void 0) {
-      return defaults;
-    }
-    throw new Error(`Parameter ${name} not passed`);
-  }
-  end() {
+  real(name) {
+    name = PHPUtils.toString(name);
+    return this.vars[name];
   }
 };
 var PHPUtils = class {
@@ -588,6 +564,12 @@ var PHPUtils = class {
     }
     return !isNaN(value) && !isNaN(+value);
   }
+  static toStringOrNumber(value) {
+    if (typeof value === "number") {
+      return value;
+    }
+    return this.toString(value);
+  }
   static toArray(value) {
     if (value instanceof PHPRef) {
       value = value.get();
@@ -615,6 +597,69 @@ var PHPUtils = class {
   static callJsFunction(func, params) {
     return func(params);
   }
+  static getOffset(arrayAccess, offset) {
+    offset = PHPUtils.toStringOrNumber(offset);
+    switch (typeof arrayAccess) {
+      case "string":
+        return Shared.defaultString.substr(arrayAccess, PHPUtils.toNumber(offset), 1);
+      case "object":
+        if (arrayAccess instanceof PHPArray) {
+          return arrayAccess.get(offset);
+        }
+        break;
+    }
+    return null;
+  }
+  static setOffset(arrayAccess, offset, value) {
+    offset = PHPUtils.toStringOrNumber(offset);
+    switch (typeof arrayAccess) {
+      case "object":
+        if (arrayAccess instanceof PHPArray) {
+          arrayAccess.set(offset, value);
+          return;
+        }
+        break;
+    }
+    return null;
+  }
+  static pushOffset(arrayAccess, value) {
+    switch (typeof arrayAccess) {
+      case "object":
+        if (arrayAccess instanceof PHPArray) {
+          arrayAccess.push(value);
+          return;
+        }
+        break;
+    }
+    return null;
+  }
+  static getArrayAccess(scope, offset) {
+    if (offset !== null) {
+      offset = PHPUtils.toStringOrNumber(offset);
+    }
+    if (scope instanceof Scope) {
+      if (offset === null) {
+        offset = "";
+      }
+      let r = scope.real(offset);
+      if (r === void 0 || r === null) {
+        scope.v[offset] = r = PHPArray.fromEmpty();
+      }
+      return r;
+    } else if (scope instanceof PHPArray) {
+      let r;
+      if (offset === null) {
+        scope.push(r = PHPArray.fromEmpty());
+      } else {
+        r = scope.getReal(offset);
+        if (r === void 0 || r === null) {
+          scope.set(offset, r = PHPArray.fromEmpty());
+        }
+      }
+      return r;
+    }
+    return null;
+  }
 };
 var PHP = {};
 var textEncoder = new TextEncoder();
@@ -627,10 +672,11 @@ var Shared = {
   defaultString
 };
 window.P = PHP;
+window.PHPUtils = PHPUtils;
 window.Test = () => {
   let local = new Scope(), v = local.v;
-  v.c = PHPUtils.callFunction("trim", new Params2({ 0: " \n\n 	 g jk \n \r \0 " }));
-  console.log(v.c, v.c.length);
+  PHPUtils.setOffset(PHPUtils.getArrayAccess(PHPUtils.getArrayAccess(local, "a"), null), 0, "Hi");
+  console.log(v.a);
 };
 
 // js/index.ts

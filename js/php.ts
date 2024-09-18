@@ -48,7 +48,8 @@ export class Scope {
         })
     }
 
-    ref(name: string) {
+    ref(name: any) {
+        name = PHPUtils.toString(name)
         let value = this.vars[name]
 
         if (value instanceof PHPRef) {
@@ -56,6 +57,11 @@ export class Scope {
         }
 
         return this.vars[name] = new PHPRef(value)
+    }
+
+    real(name: any) {
+        name = PHPUtils.toString(name)
+        return this.vars[name]
     }
 
 }
@@ -329,6 +335,14 @@ export class PHPUtils {
         return !isNaN(value) && !isNaN(+value)
     }
 
+    static toStringOrNumber(value: any): string | number {
+        if (typeof value === 'number') {
+            return value
+        }
+
+        return this.toString(value)
+    }
+
     static toArray(value: any): PHPArray {
         if (value instanceof PHPRef) {
             value = value.get()
@@ -366,6 +380,88 @@ export class PHPUtils {
         return func(params)
     }
 
+    static getOffset(arrayAccess: any, offset: any) {
+        offset = PHPUtils.toStringOrNumber(offset)
+
+        switch (typeof arrayAccess) {
+            case "string":
+                return Shared.defaultString.substr(arrayAccess, PHPUtils.toNumber(offset), 1)
+
+            case "object":
+                if (arrayAccess instanceof PHPArray) {
+                    return arrayAccess.get(offset)
+                }
+                break
+        }
+
+        return null
+    }
+
+    static setOffset(arrayAccess: any, offset: any, value: any) {
+        offset = PHPUtils.toStringOrNumber(offset)
+
+        switch (typeof arrayAccess) {
+            case "object":
+                if (arrayAccess instanceof PHPArray) {
+                    arrayAccess.set(offset, value)
+                    return
+                }
+                break
+        }
+
+        return null
+    }
+
+    static pushOffset(arrayAccess: any, value: any) {
+        switch (typeof arrayAccess) {
+            case "object":
+                if (arrayAccess instanceof PHPArray) {
+                    arrayAccess.push(value)
+                    return
+                }
+                break
+        }
+
+        return null
+    }
+
+    static getArrayAccess(scope: any, offset: any) {
+        if (offset !== null) {
+            offset = PHPUtils.toStringOrNumber(offset)
+        }
+
+        if (scope instanceof Scope) {
+            if (offset === null) {
+                offset = ""
+            }
+
+            let r = scope.real(offset)
+
+            if (r === undefined || r === null) {
+                scope.v[offset] = r = PHPArray.fromEmpty()
+            }
+
+            return r
+        }
+        else if (scope instanceof PHPArray) {
+            let r
+            if (offset === null) {
+                scope.push(r = PHPArray.fromEmpty())
+            }
+            else {
+                r = scope.getReal(offset)
+
+                if (r === undefined || r === null) {
+                    scope.set(offset, r = PHPArray.fromEmpty())
+                }
+            }
+
+            return r
+        }
+
+        return null
+    }
+
 }
 
 export let PHP = {
@@ -384,11 +480,14 @@ export let Shared = {
 
 // @ts-ignore
 window.P = PHP
+// @ts-ignore
+window.PHPUtils = PHPUtils
 
 // @ts-ignore
 window.Test = () => {
     let local: Scope = new Scope(), v = local.v
-    v.c = PHPUtils.callFunction("trim", new Params({0: " \n\n \t g jk \n \r \0 "}))
 
-    console.log(v.c, v.c.length)
+    PHPUtils.setOffset(PHPUtils.getArrayAccess(PHPUtils.getArrayAccess(local, 'a'), null), 0, "Hi")
+
+    console.log(v.a)
 }

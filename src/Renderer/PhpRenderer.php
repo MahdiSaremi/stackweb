@@ -51,7 +51,7 @@ class PhpRenderer
 
     public static function renderInString(string $inner)
     {
-        return addcslashes($inner, "'");
+        return addcslashes($inner, "'\\");
     }
 
 }
