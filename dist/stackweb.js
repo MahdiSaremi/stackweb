@@ -803,11 +803,23 @@
     constructor(source) {
       super();
       this.source = source;
+      this.filterSource();
+    }
+    filterSource() {
+      for (const key in this.source.attrs) {
+        let value = this.source.attrs[key];
+        if (value === void 0 || value === null || value === false) {
+          delete this.source.attrs[key];
+        }
+      }
     }
     onMount() {
       this.el = document.createElement(this.source.name);
       this.insertNode(this.el);
       this.source.slot.mount(this, this, this.el);
+      for (const key in this.source.attrs) {
+        this._setAttribute(key, this.source.attrs[key], void 0);
+      }
     }
     onUnmount() {
       this.el.remove();
@@ -815,6 +827,43 @@
     }
     onMorph(other) {
       this.source.slot.morph(other.source.slot);
+      let newAttrs = other.source.attrs;
+      for (const key in this.source.attrs) {
+        if (newAttrs[key] === void 0) {
+          this._removeAttribute(key, this.source.attrs[key]);
+          delete this.source.attrs[key];
+        } else {
+          this._setAttribute(key, newAttrs[key], this.source.attrs[key]);
+          this.source.attrs[key] = newAttrs[key];
+        }
+        delete newAttrs[key];
+      }
+      for (const key in newAttrs) {
+        this._setAttribute(key, newAttrs[key], void 0);
+        this.source.attrs[key] = newAttrs[key];
+      }
+    }
+    _setAttribute(name, value, old) {
+      if (name.indexOf("on") === 0) {
+        let event = name.substring(2).toLowerCase();
+        if (old !== void 0) {
+          this.el.removeEventListener(event, old);
+        }
+        this.el.addEventListener(event, value);
+        return;
+      }
+      if (value === true) {
+        value = "";
+      }
+      this.el.setAttribute(name, value);
+    }
+    _removeAttribute(name, old) {
+      if (name.indexOf("on") === 0) {
+        let event = name.substring(2).toLowerCase();
+        this.el.removeEventListener(event, old);
+        return;
+      }
+      this.el.removeAttribute(name);
     }
     resolveRelativeNodes() {
       return [this.el, this.el];

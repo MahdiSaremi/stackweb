@@ -173,6 +173,17 @@ export class Dom extends Entity {
     constructor(source: DomRegister) {
         super()
         this.source = source
+        this.filterSource()
+    }
+
+    filterSource() {
+        for (const key in this.source.attrs) {
+            let value = this.source.attrs[key]
+
+            if (value === undefined || value === null || value === false) {
+                delete this.source.attrs[key]
+            }
+        }
     }
 
     onMount() {
@@ -181,6 +192,10 @@ export class Dom extends Entity {
         this.insertNode(this.el)
 
         this.source.slot.mount(this, this, this.el)
+
+        for (const key in this.source.attrs) {
+            this._setAttribute(key, this.source.attrs[key], undefined)
+        }
     }
 
     onUnmount() {
@@ -190,6 +205,54 @@ export class Dom extends Entity {
 
     onMorph(other: Entity) {
         this.source.slot.morph((other as Dom).source.slot)
+
+        let newAttrs = (other as Dom).source.attrs
+        for (const key in this.source.attrs) {
+            if (newAttrs[key] === undefined) {
+                this._removeAttribute(key, this.source.attrs[key])
+                delete this.source.attrs[key]
+            }
+            else {
+                this._setAttribute(key, newAttrs[key], this.source.attrs[key])
+                this.source.attrs[key] = newAttrs[key]
+            }
+
+            delete newAttrs[key]
+        }
+
+        for (const key in newAttrs) {
+            this._setAttribute(key, newAttrs[key], undefined)
+            this.source.attrs[key] = newAttrs[key]
+        }
+    }
+
+    _setAttribute(name: string, value: any, old: any) {
+        if (name.indexOf('on') === 0) {
+            let event = name.substring(2).toLowerCase()
+
+            if (old !== undefined) {
+                this.el.removeEventListener(event, old)
+            }
+
+            this.el.addEventListener(event, value)
+            return
+        }
+
+        if (value === true) {
+            value = ""
+        }
+
+        this.el.setAttribute(name, value)
+    }
+
+    _removeAttribute(name: string, old: any) {
+        if (name.indexOf('on') === 0) {
+            let event = name.substring(2).toLowerCase()
+            this.el.removeEventListener(event, old)
+            return
+        }
+
+        this.el.removeAttribute(name)
     }
 
     resolveRelativeNodes(): [Node, Node] {
