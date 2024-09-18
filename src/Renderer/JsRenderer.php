@@ -101,7 +101,7 @@ class JsRenderer
         }
         elseif ($object instanceof _CliPhpStruct)
         {
-            $out->append($object->js);
+            $out->appendCode($object->js);
         }
         elseif ($object instanceof _ApiPhpStruct)
         {

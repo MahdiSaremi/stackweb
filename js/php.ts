@@ -1,5 +1,6 @@
 import * as PhpFunctions from './php-functions'
-import {PHPRef} from "./php-types";
+import {PHPArray, PHPRef} from "./php-types";
+import {PHPString} from "./php-strings";
 
 export class Scope {
 
@@ -7,7 +8,8 @@ export class Scope {
     $this: Object
     vars: Object
 
-    v: any
+    // @ts-ignore
+    v: Proxy
 
     constructor($static: string = undefined, $this: Object = undefined, vars: Object = {}) {
         this.$static = $static
@@ -46,7 +48,8 @@ export class Scope {
         })
     }
 
-    ref(name: string) {
+    ref(name: any) {
+        name = PHPUtils.toString(name)
         let value = this.vars[name]
 
         if (value instanceof PHPRef) {
@@ -54,6 +57,11 @@ export class Scope {
         }
 
         return this.vars[name] = new PHPRef(value)
+    }
+
+    real(name: any) {
+        name = PHPUtils.toString(name)
+        return this.vars[name]
     }
 
 }
@@ -66,14 +74,14 @@ export class Params {
     values: Object
     i: number
 
-    constructor(values: Object, $this: Object, $static: string) {
+    constructor(values: Object, $this: Object = undefined, $static: string = undefined) {
         this.$this = $this
         this.$static = $static
         this.values = values
         this.i = 0
     }
 
-    next(name: string, defaults : () => any = undefined): any {
+    next(name: string, defaults : null | number | string | (() => any) = undefined): any {
         if (this.values[name] !== undefined) {
             let value = this.values[name]
             delete this.values[name]
@@ -88,8 +96,12 @@ export class Params {
             return value
         }
 
-        if (defaults) {
+        if (defaults instanceof Function) {
             return defaults()
+        }
+
+        if (defaults !== undefined) {
+            return defaults
         }
 
         throw new Error(`Parameter ${name} not passed`)
@@ -109,6 +121,13 @@ export class PHPUtils {
      * @param right
      */
     static opAdd(left: any, right: any) {
+        if (left instanceof PHPArray) {
+            let newArray = left.copy()
+            newArray.plus(this.toArray(right))
+
+            return newArray
+        }
+
         return this.toNumber(left) + this.toNumber(right)
     }
 
@@ -152,7 +171,11 @@ export class PHPUtils {
         return this.toString(left) + this.toString(right)
     }
 
-    static getType(value: any) : string {
+    static getType(value: any): string {
+        if (value instanceof PHPRef) {
+            value = value.get()
+        }
+
         switch (typeof value) {
             case "undefined":
                 return "null"
@@ -174,6 +197,10 @@ export class PHPUtils {
                     return "null"
                 }
 
+                if (value instanceof PHPArray) {
+                    return "array"
+                }
+
                 if (value instanceof Array) {
                     return "array"
                 }
@@ -187,7 +214,11 @@ export class PHPUtils {
         }
     }
 
-    static toNumber(value: any) {
+    static toNumber(value: any): number {
+        if (value instanceof PHPRef) {
+            value = value.get()
+        }
+
         let type = typeof value
 
         switch (type)
@@ -206,14 +237,19 @@ export class PHPUtils {
                 return value === null ? 1 : 0
 
             case "string":
-                return +value
+                let num = +value
+                return isNaN(num) ? 0 : num
 
             default:
                 return 1
         }
     }
 
-    static toString(value: any) {
+    static toString(value: any): string {
+        if (value instanceof PHPRef) {
+            value = value.get()
+        }
+
         let type = typeof value
 
         switch (type)
@@ -222,6 +258,9 @@ export class PHPUtils {
             case "number":
                 return '' + value
 
+            case "string":
+                return value
+
             case "boolean":
                 return value ? '1' : ''
 
@@ -229,18 +268,226 @@ export class PHPUtils {
                 return ''
 
             case "object":
-                return value === null ? '' : 'object'
+                if (value === null) {
+                    return ''
+                }
+
+                if (value instanceof PHPArray) {
+                    return "Array"
+                }
+
+                return 'object'
 
             default:
                 return 'object'
         }
     }
 
+    static toBool(value: any): boolean {
+        if (value instanceof PHPRef) {
+            value = value.get()
+        }
+
+        let type = typeof value
+
+        switch (type)
+        {
+            case "bigint":
+            case "number":
+                return value != 0;
+
+            case "string":
+                return value != "" && value != "0"
+
+            case "boolean":
+                return value
+
+            case "undefined":
+                return false
+
+            case "object":
+                if (value instanceof PHPArray) {
+                    return value.count() > 0
+                }
+
+                return value !== null
+
+            default:
+                return true
+        }
+    }
+
+    static isNumeric(value: any): boolean {
+        if (value instanceof PHPRef) {
+            value = value.get()
+        }
+
+        let type = typeof value
+
+        if (type == "bigint" || type == "number") {
+            return true
+        }
+
+        if (type != "string") {
+            return false
+        }
+
+        return !isNaN(value) && !isNaN(+value)
+    }
+
+    static toStringOrNumber(value: any): string | number {
+        if (typeof value === 'number') {
+            return value
+        }
+
+        return this.toString(value)
+    }
+
+    static toArray(value: any): PHPArray {
+        if (value instanceof PHPRef) {
+            value = value.get()
+        }
+
+        let type = typeof value
+
+        if (value instanceof PHPArray) {
+            return value
+        }
+
+        switch (type)
+        {
+            case "string":
+                return PHPArray.fromArray(new Array<string>(...value))
+
+            default:
+                return PHPArray.fromEmpty()
+        }
+    }
+
+    static callFunction(name: string, params: Params) {
+        name = name.toLowerCase()
+
+        let fn = Shared.functions[name]
+        if (fn) {
+            return this.callJsFunction(fn, params)
+        }
+        else {
+            throw new Error(`Function [${name}] is not exists`)
+        }
+    }
+
+    static callJsFunction(func: Function, params: Params) {
+        return func(params)
+    }
+
+    static getOffset(arrayAccess: any, offset: any) {
+        offset = PHPUtils.toStringOrNumber(offset)
+
+        switch (typeof arrayAccess) {
+            case "string":
+                return Shared.defaultString.substr(arrayAccess, PHPUtils.toNumber(offset), 1)
+
+            case "object":
+                if (arrayAccess instanceof PHPArray) {
+                    return arrayAccess.get(offset)
+                }
+                break
+        }
+
+        return null
+    }
+
+    static setOffset(arrayAccess: any, offset: any, value: any) {
+        offset = PHPUtils.toStringOrNumber(offset)
+
+        switch (typeof arrayAccess) {
+            case "object":
+                if (arrayAccess instanceof PHPArray) {
+                    arrayAccess.set(offset, value)
+                    return
+                }
+                break
+        }
+
+        return null
+    }
+
+    static pushOffset(arrayAccess: any, value: any) {
+        switch (typeof arrayAccess) {
+            case "object":
+                if (arrayAccess instanceof PHPArray) {
+                    arrayAccess.push(value)
+                    return
+                }
+                break
+        }
+
+        return null
+    }
+
+    static getArrayAccess(scope: any, offset: any) {
+        if (offset !== null) {
+            offset = PHPUtils.toStringOrNumber(offset)
+        }
+
+        if (scope instanceof Scope) {
+            if (offset === null) {
+                offset = ""
+            }
+
+            let r = scope.real(offset)
+
+            if (r === undefined || r === null) {
+                scope.v[offset] = r = PHPArray.fromEmpty()
+            }
+
+            return r
+        }
+        else if (scope instanceof PHPArray) {
+            let r
+            if (offset === null) {
+                scope.push(r = PHPArray.fromEmpty())
+            }
+            else {
+                r = scope.getReal(offset)
+
+                if (r === undefined || r === null) {
+                    scope.set(offset, r = PHPArray.fromEmpty())
+                }
+            }
+
+            return r
+        }
+
+        return null
+    }
+
 }
 
 export let PHP = {
+}
+
+let textEncoder = new TextEncoder()
+let textDecoder = new TextDecoder()
+let defaultString = new PHPString(textEncoder, textDecoder)
+
+export let Shared = {
     functions: PhpFunctions,
+    textEncoder,
+    textDecoder,
+    defaultString,
 }
 
 // @ts-ignore
-window.PHP = PHP
+window.P = PHP
+// @ts-ignore
+window.PHPUtils = PHPUtils
+
+// @ts-ignore
+window.Test = () => {
+    let local: Scope = new Scope(), v = local.v
+
+    PHPUtils.setOffset(PHPUtils.getArrayAccess(PHPUtils.getArrayAccess(local, 'a'), null), 0, "Hi")
+
+    console.log(v.a)
+}

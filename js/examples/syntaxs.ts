@@ -13,7 +13,6 @@ v.a = 1
 // $a = $b
 v.a = v.b
 // $a['x'] = $b['y']
-    ...??? WTF
 PHPUtils.setOffset(v.a, 'x', PHPUtils.getOffset(v.b, 'y'))
 // $a['x']['y'] = $b
 PHPUtils.setOffset(PHPUtils.getOffset(a.x, 'x'), 'y', v.b)
