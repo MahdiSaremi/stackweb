@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.magic('stack', (el, {Alpine}) => {
+                return Alpine.$data(el).__stack
+            })
+
+            Alpine.directive('stack', (el, {value, modifiers, expression}, {Alpine, effect, cleanup}) => {
+                Alpine.$data(el).__stack = new Proxy({
+                    _data: Alpine.evaluate(el, expression),
+                }, {
+                    get(target, p, receiver) {
+                        return target._data[p]
+                    },
+                    set(target, p, newValue, receiver) {
+                        target._data[p] = newValue
+                    },
+                })
+            })
+        })
+    </script>
+</head>
+<body>
+    <div x-data x-stack="{name: 'Mahdi'}">
+        Hello <span x-text="$stack.name"></span>
+    </div>
+</body>
+</html>

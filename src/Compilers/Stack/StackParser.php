@@ -18,19 +18,18 @@ class StackParser implements Parser
 
     public function __construct(
         protected StringReader $string,
-        public readonly string $stackName,
         /** @var Token[] */
         protected array        $tokens,
     )
     {
     }
 
-    public static function from(StringReader $string, string $stackName)
+    public static function from(StringReader $string)
     {
         $tokenizer = new Tokenizer($string);
         $tokenizer->parse();
 
-        return new static($string, $stackName, $tokenizer->getTokens());
+        return new static($string, $tokenizer->getTokens());
     }
 
     public function parse(): void
@@ -49,7 +48,6 @@ class StackParser implements Parser
             $this->string,
             $this->string->startIndex,
             $this->string->startIndex + $this->string->length,
-            name: $this->stackName,
             phpInitializer: $phpInitializer,
             dom: array_slice($this->tokens, $i),
         );

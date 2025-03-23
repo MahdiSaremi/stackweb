@@ -1,4 +1,87 @@
-import './php'
+
+// @ts-ignore
+let effects: WeakMap<Entity, Map<string, EffectAction[]>> = new WeakMap();
+let effectList: EffectAction[] = [];
+
+export interface EffectAction {
+    morph?: Function,
+    unmount?: Function,
+    on: [Entity, string][]
+}
+
+function addEffect(effect: EffectAction) {
+    for (let key in effect.on) {
+        let [component, state] = effect.on[key]
+
+        if (!effects.has(component)) {
+            // @ts-ignore
+            effects.set(component, new Map<string, EffectAction[]>())
+        }
+
+        if (!effects.get(component).has(state)) {
+            effects.get(component).set(state, [])
+        }
+
+        effects.get(component)[state].push(effect)
+    }
+
+    effectList.push(effect)
+}
+
+function morphEffect(morphs: [Entity, string][]) {
+    // @ts-ignore
+    let effectsToRun: Set<EffectAction> = new Set<EffectAction>()
+
+    for (let key in morphs) {
+        let [component, state] = morphs[key]
+
+        if (effects.has(component) && effects.get(component).has(state)) {
+            let all = effects.get(component).get(state)
+
+            for (let i in all) {
+                effectsToRun.add(all[i])
+            }
+        }
+    }
+
+    effectsToRun.forEach(effect => {
+        if (effect.morph) {
+            effect.morph()
+        }
+    })
+}
+
+function unmountEffect(component: Entity, states: string[]) {
+    // @ts-ignore
+    let effectsToRun: Set<EffectAction> = new Set<EffectAction>()
+
+    for (let key in states) {
+        let state = states[key]
+
+        if (effects.has(component) && effects.get(component).has(state)) {
+            let all = effects.get(component).get(state)
+
+            for (let i in all) {
+                effectsToRun.add(all[i])
+            }
+        }
+    }
+
+    effectsToRun.forEach(effect => {
+        if (effect.unmount) {
+            effect.unmount()
+        }
+
+        for (let i in states) {
+            let state: string = states[i]
+            effect.on = effect.on.filter(x => x[0] != component && x[1] != state)
+        }
+    })
+
+    effects.delete(component)
+}
+
+let trackedStates: [Invoke, string][] = []
 
 export abstract class Entity {
 
@@ -25,6 +108,7 @@ export abstract class Entity {
     public unmount() {
         this.onUnmount()
         this.isMounted = false
+        unmountEffect(parentE)
     }
 
     public morph(other: Entity) {
@@ -164,7 +248,7 @@ export class Group extends Entity {
 export interface DomRegister {
     name: string
     attrs: Object
-    slot: Group
+    slot: Group,
 }
 
 export class Dom extends Entity {
@@ -201,6 +285,10 @@ export class Dom extends Entity {
     onUnmount() {
         this.el.remove()
         this.el = undefined
+
+        for (const key in this.source.attrs) {
+            this._removeAttribute(key, this.source.attrs[key])
+        }
     }
 
     onMorph(other: Entity) {
@@ -227,6 +315,17 @@ export class Dom extends Entity {
     }
 
     _setAttribute(name: string, value: any, old: any) {
+        if (name.indexOf('s-on:') === 0) {
+            let event = name.substring(5)
+
+            if (old !== undefined) {
+                this.el.removeEventListener(event, old)
+            }
+
+            this.el.addEventListener(event, value)
+            return
+        }
+
         if (name.indexOf('on') === 0) {
             let event = name.substring(2).toLowerCase()
 
@@ -246,9 +345,19 @@ export class Dom extends Entity {
     }
 
     _removeAttribute(name: string, old: any) {
+        if (name.indexOf('s-on:') === 0) {
+            if (old !== undefined) {
+                let event = name.substring(5)
+                this.el.removeEventListener(event, old)
+            }
+            return
+        }
+
         if (name.indexOf('on') === 0) {
-            let event = name.substring(2).toLowerCase()
-            this.el.removeEventListener(event, old)
+            if (old !== undefined) {
+                let event = name.substring(2).toLowerCase()
+                this.el.removeEventListener(event, old)
+            }
             return
         }
 
@@ -378,20 +487,21 @@ export class Invoke extends Entity {
 
     onUnmount() {
         this.content.unmount()
+        unmountEffect(this, Object.keys(this.states))
     }
 
     reset() {
         this.states = this.component.source.states(this)
     }
 
-    changed: boolean = false
+    // changed: boolean = false
 
     refresh() {
         const newRender = this.component.source.render(this)
 
         this.content.morph(newRender)
 
-        this.changed = false
+        // this.changed = false
     }
 
     onMorph(other: Entity) {
@@ -421,14 +531,17 @@ export class Invoke extends Entity {
 
     setState(name: string, value: any) {
         this.states[name] = value
-        this.changed = true
+        // this.changed = true
+        trackedStates.push()
     }
 
     track(callback: () => any) {
         callback()
-        if (this.changed) {
-            this.refresh()
-        }
+        // if (this.changed) {
+        //     this.refresh()
+        // }
+        morphEffect(trackedStates)
+        trackedStates = []
     }
 
     getSlot(name: string = '') {

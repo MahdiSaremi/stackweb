@@ -22,9 +22,9 @@
                     name: 'div',
                     attrs: {
                         class: 'bg-green-' + Math.floor(Math.random()*100),
-                        onClick: () => {
+                        'onClick': () => {
                             $.setState('count', $.getState('count') + 1)
-                            $.refresh()
+                            // $.refresh()
                         },
                     },
                     slot: new StackWeb.Group([

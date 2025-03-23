@@ -11,7 +11,7 @@ class HtmlXCompilerTest extends TestCase
 
     public function test_0()
     {
-        $tokenizer = \StackWeb\Compilers\Stack\StackParser::from(new StringReader(
+        $tokenizer = \StackWeb\Compilers\Stack\StackCompiler::from(new StringReader(
             <<<'Html'
             <?php
             $name = useState();
@@ -25,8 +25,8 @@ class HtmlXCompilerTest extends TestCase
             'test.php',
         ), 'test');
 
-        $tokenizer->parse();
-        dd($tokenizer->getStruct());
+        $tokenizer->compile();
+        dd($tokenizer->getOutput());
     }
 
     public function test_1()

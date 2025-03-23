@@ -17,9 +17,9 @@ class StackCompiler implements Compiler
     {
     }
 
-    public static function from(StringReader $string, string $stackName): static
+    public static function from(StringReader $string): static
     {
-        $parser = StackParser::from($string, $stackName);
+        $parser = StackParser::from($string);
         $parser->parse();
 
         return new static($string, $parser->getStruct());
@@ -27,7 +27,11 @@ class StackCompiler implements Compiler
 
     public function compile()
     {
-
+        $this->out = "<?php\n" . $this->stack->phpInitializer . "\n\n";
+        $this->out .= sprintf(
+            "",
+            Component
+        );
     }
 
     public function getOutput(): string

@@ -4,7 +4,10 @@
     "autoload": {
         "psr-4": {
             "StackWeb\\": "src/"
-        }
+        },
+        "files": [
+            "functions/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

@@ -1,30 +1,30 @@
 <?php
 $toast = useToast();
-$show = useClientState('show');
-$login = useForm('login')
+$show = useState();
+$login = useForm()
     ->inputs([
-        'name', 'password',
+        'email', 'password',
     ])
     ->action(function(Form $form) use ($toast) {
-        [$name, $password] = $form->fetch('name', 'password');
+        [$email, $password] = $form->fetch('email', 'password');
         // Login
         $toast->success("Logged in!");
         return to_route('dashboard');
     });
 ?>
-<script x-data>
-    define({
-        openModal() {
-            {{ $show->js()->toggle() }}
-        }
-    })
-</script>
 
-<button @click="openModal">Login</button>
-<stack:modal :$show>
-    Username:
-    <input type="text" x-model="{{ $form->js->name }}">
-    Password:
-    <input type="password" x-model="{{ $form->js->password }}">
-    <button @click="{{ $form->js->submit }}">Login</button>
-</stack:modal>
+<div>
+    <button @click="{{ $show->js->toggle }}">
+        Login
+    </button>
+
+    <stack:modal :$show>
+        <label>Email:</label>
+        <input type="text" x-model="{{ $form->js->email }}">
+
+        <label>Password:</label>
+        <input type="password" x-model="{{ $form->js->password }}">
+
+        <button @click="{{ $form->js->submit }}">Login</button>
+    </stack:modal>
+</div>

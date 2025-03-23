@@ -15,7 +15,6 @@ class _StackStruct implements Token
         public int          $startOffset,
         public int          $endOffset,
 
-        public string       $name,
         public string       $phpInitializer,
         /** @var Token[] */
         public array        $dom,
