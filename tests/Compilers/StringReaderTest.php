@@ -124,7 +124,7 @@ class StringReaderTest extends TestCase
                 }
                 elseif ($value == '.')
                 {
-                    return StringReader::DONT_INCLUDE;
+                    return StringReader::dontInclude();
                 }
                 else
                 {
@@ -149,7 +149,7 @@ class StringReaderTest extends TestCase
                 }
                 elseif ($value == '.')
                 {
-                    return [StringReader::REPLACE_WITH, ','];
+                    return StringReader::replaceWith(',');
                 }
                 else
                 {
@@ -208,7 +208,7 @@ class StringReaderTest extends TestCase
                 }
                 elseif ($value == '.')
                 {
-                    return StringReader::DONT_INCLUDE;
+                    return StringReader::dontInclude();
                 }
                 else
                 {
@@ -233,7 +233,7 @@ class StringReaderTest extends TestCase
                 }
                 elseif ($value == '.')
                 {
-                    return [StringReader::REPLACE_WITH, ','];
+                    return StringReader::replaceWith(',');
                 }
                 else
                 {
@@ -357,7 +357,7 @@ class StringReaderTest extends TestCase
 
         $string->offset = 2;
         $this->expectException(SyntaxError::class);
-        $this->expectExceptionMessage("Syntax Error: Foo in [test] on line 2");
+        $this->expectExceptionMessage("Syntax Error: Foo on line 2 in [test]");
 
         $string->syntaxError('Foo');
     }

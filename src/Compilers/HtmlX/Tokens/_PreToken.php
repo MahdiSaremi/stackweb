@@ -12,13 +12,13 @@ class _PreToken implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $type,
-        public mixed $content = null,
-        public ?bool $selfClose = null,
-        public ?array $props = null,
+        public string       $type,
+        public mixed        $content = null,
+        public ?bool        $selfClose = null,
+        public ?array       $props = null,
     )
     {
     }

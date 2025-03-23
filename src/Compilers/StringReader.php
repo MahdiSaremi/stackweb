@@ -11,59 +11,64 @@ class StringReader
     public const int DONT_INCLUDE = 2;
     public const int REPLACE_WITH = 4;
 
-    public int          $offset = 0;
+    public int $offset = 0;
     public readonly int $length;
 
     public readonly array $lineIndexInfo;
 
     public function __construct(
-        public readonly string $content,
-        public readonly string $fileName,
+        public readonly string        $content,
+        public readonly string        $fileName,
         public readonly ?StringReader $parent = null,
-        public readonly int $startLine = 1,
-        public readonly int $startIndex = 0,
+        public readonly int           $startLine = 1,
+        public readonly int           $startIndex = 0,
     )
     {
         $this->length = strlen($this->content);
 
         $lineIndexInfo = [];
-        foreach (str_split($this->content) as $i => $char)
-        {
+        foreach (str_split($this->content) as $i => $char) {
             if ($char == "\n") $lineIndexInfo[] = $i;
         }
         $this->lineIndexInfo = $lineIndexInfo;
     }
 
+    public static function dontInclude(): int
+    {
+        return self::DONT_INCLUDE;
+    }
+
+    public static function replaceWith(mixed $with): array
+    {
+        return [self::REPLACE_WITH, $with];
+    }
 
 
-    public function end() : bool
+    public function end(): bool
     {
         return $this->offset >= $this->length;
     }
 
-    public function read(int $length = 1, bool $forceLength = false, bool $silent = false) : ?string
+    public function read(int $length = 1, bool $forceLength = false, bool $silent = false): ?string
     {
-        if ($this->end())
-        {
+        if ($this->end()) {
             return null;
         }
 
-        if ($forceLength && $this->offset + $length > $this->length)
-        {
+        if ($forceLength && $this->offset + $length > $this->length) {
             return null;
         }
 
         $result = substr($this->content, $this->offset, $length);
 
-        if (!$silent)
-        {
+        if (!$silent) {
             $this->offset += $length;
         }
 
         return $result;
     }
 
-    public function readAll() : ?string
+    public function readAll(): ?string
     {
         if ($this->end()) return null;
 
@@ -82,7 +87,7 @@ class StringReader
         bool    $includeBreaker = false,
         ?string &$breaker = null,
         ?bool   &$broken = false,
-    ) : string
+    ): string
     {
         $jump ??= $step;
         $result = '';
@@ -90,49 +95,35 @@ class StringReader
         $broken = false;
 
         $isFirst = true;
-        while (!$this->end())
-        {
+        while (!$this->end()) {
             $read = $this->read($step, $forceLength, silent: true);
 
-            if ($read === null)
-            {
+            if ($read === null) {
                 break;
             }
 
             $trig = $trigger($read);
-            if ($trig === true)
-            {
+            if ($trig === true) {
                 $result .= $jump < $step && !$isFirst ? @substr($read, $step - $jump) : $read;
                 $this->offset += $jump;
-            }
-            elseif ($trig === static::DONT_INCLUDE)
-            {
+            } elseif ($trig === static::DONT_INCLUDE) {
                 $this->offset += $jump;
-            }
-            elseif (is_array($trig))
-            {
-                if ($trig[0] === static::REPLACE_WITH)
-                {
+            } elseif (is_array($trig)) {
+                if ($trig[0] === static::REPLACE_WITH) {
                     $result .= $jump < $step && !$isFirst ? @substr($trig[1], $step - $jump) : $trig[1];
                     $this->offset += $jump;
-                }
-                else
-                {
+                } else {
                     throw new \InvalidArgumentException("Unknown returned type");
                 }
-            }
-            else
-            {
+            } else {
                 $breaker = $read;
                 $broken = true;
 
-                if ($skipBreaker)
-                {
+                if ($skipBreaker) {
                     $this->offset += $jump;
                 }
 
-                if ($includeBreaker)
-                {
+                if ($includeBreaker) {
                     $result .= $jump < $step && !$isFirst ? @substr($read, $step - $jump) : $read;
                 }
 
@@ -154,11 +145,10 @@ class StringReader
         bool    $includeBreaker = false,
         ?string &$breaker = null,
         ?bool   &$broken = false,
-    ) : string
+    ): string
     {
         return $this->readWhile(
-            function ($value) use($trigger)
-            {
+            function ($value) use ($trigger) {
                 $result = $trigger($value);
                 return is_bool($result) ? !$result : $result;
             },
@@ -183,39 +173,34 @@ class StringReader
         ?bool  &$found = false
     )
     {
-        if ($this->read(silent: true) === $char)
-        {
+        if ($this->read(silent: true) === $char) {
             return $this->read();
         }
 
         $skipNext = false;
         return $this->readUntil(
-            function($value) use (&$skipNext, $char, $escape, $translate)
-            {
-                if ($value === $escape)
-                {
+            function ($value) use (&$skipNext, $char, $escape, $translate) {
+                if ($value === $escape) {
                     $skipNext = true;
                     return $translate ? static::DONT_INCLUDE : false;
                 }
 
-                if ($skipNext)
-                {
+                if ($skipNext) {
                     $skipNext = false;
-                    return $translate ? [static::REPLACE_WITH, $this->getEscapedValue($value) ?? $escape . $value] : false;
+                    return $translate ? static::replaceWith($this->getEscapedValue($value) ?? $escape . $value) : false;
                 }
 
                 return $value === $char;
             },
-            skipBreaker   : $skipBreaker,
+            skipBreaker: $skipBreaker,
             includeBreaker: $includeBreaker,
-            broken        : $found,
+            broken: $found,
         );
     }
 
     protected function getEscapedValue(string $char)
     {
-        return match ($char)
-        {
+        return match ($char) {
             'n' => "\n",
             'r' => "\r",
             'e' => "\e",
@@ -234,7 +219,7 @@ class StringReader
         array  $escapes = [],
         bool   $skipBreaker = true,
         bool   $includeBreaker = false,
-        ?bool &$found = false,
+        ?bool  &$found = false,
     )
     {
         $escapes = array_map(fn($escape) => is_array($escape) ? $escape : [$escape], $escapes);
@@ -242,33 +227,24 @@ class StringReader
         $result = '';
 
         $deep = 0;
-        while (!$this->end())
-        {
+        while (!$this->end()) {
             $read = $this->read();
 
-            if (in_array($read, $escapeChars))
-            {
+            if (in_array($read, $escapeChars)) {
                 $result .= $read;
                 $escape = $escapes[array_search($read, $escapeChars)];
                 $result .= $this->readEscape(...$escape, includeBreaker: true);
-            }
-            elseif ($read === $open)
-            {
+            } elseif ($read === $open) {
                 $deep++;
                 $result .= $read;
-            }
-            elseif ($read === $close)
-            {
+            } elseif ($read === $close) {
                 $deep--;
-                if ($deep < 0)
-                {
-                    if ($includeBreaker)
-                    {
+                if ($deep < 0) {
+                    if ($includeBreaker) {
                         $result .= $read;
                     }
 
-                    if (!$skipBreaker)
-                    {
+                    if (!$skipBreaker) {
                         $this->offset--;
                     }
 
@@ -277,9 +253,7 @@ class StringReader
                 }
 
                 $result .= $read;
-            }
-            else
-            {
+            } else {
                 $result .= $read;
             }
         }
@@ -294,7 +268,7 @@ class StringReader
         array  $ranges = [],
         bool   $skipBreaker = true,
         bool   $includeBreaker = false,
-        ?bool &$found = false,
+        ?bool  &$found = false,
     )
     {
         $escapes = array_map(fn($escape) => is_array($escape) ? $escape : [$escape], $escapes);
@@ -302,39 +276,29 @@ class StringReader
         $rangeChars = array_map(fn($range) => $range[0], $ranges);
         $result = '';
 
-        while (!$this->end())
-        {
+        while (!$this->end()) {
             $read = $this->read();
 
-            if (in_array($read, $escapeChars))
-            {
+            if (in_array($read, $escapeChars)) {
                 $result .= $read;
                 $escape = $escapes[array_search($read, $escapeChars)];
                 $result .= $this->readEscape(...$escape, includeBreaker: true);
-            }
-            elseif (in_array($read, $rangeChars))
-            {
+            } elseif (in_array($read, $rangeChars)) {
                 $result .= $read;
                 $range = $ranges[array_search($read, $rangeChars)];
                 $result .= $this->readRange(...$range, includeBreaker: true);
-            }
-            elseif ($read === $char)
-            {
-                if ($includeBreaker)
-                {
+            } elseif ($read === $char) {
+                if ($includeBreaker) {
                     $result .= $read;
                 }
 
-                if (!$skipBreaker)
-                {
+                if (!$skipBreaker) {
                     $this->offset--;
                 }
 
                 $found = true;
                 return $result;
-            }
-            else
-            {
+            } else {
                 $result .= $read;
             }
         }
@@ -346,27 +310,25 @@ class StringReader
 
     public function readCWord()
     {
-        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_']));
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '_']));
     }
 
     public function readJWord()
     {
-        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_','$']));
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '_', '$']));
     }
 
     public function readHWord()
     {
-        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1,2,3,4,5,6,7,8,9,0,'_',':','.','-']));
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '_', ':', '.', '-']));
     }
 
     public function readIf(
         string|array $value,
-    ) : ?string
+    ): ?string
     {
-        if (is_string($value))
-        {
-            if ($this->read(strlen($value), silent: true) == $value)
-            {
+        if (is_string($value)) {
+            if ($this->read(strlen($value), silent: true) == $value) {
                 $this->offset += strlen($value);
                 return $value;
             }
@@ -374,10 +336,8 @@ class StringReader
             return null;
         }
 
-        foreach ($value as $val)
-        {
-            if ($this->read(strlen($val), silent: true) == $val)
-            {
+        foreach ($value as $val) {
+            if ($this->read(strlen($val), silent: true) == $val) {
                 $this->offset += strlen($val);
                 return $val;
             }
@@ -398,15 +358,12 @@ class StringReader
 
     public function getLine()
     {
-        if (!$this->lineIndexInfo)
-        {
+        if (!$this->lineIndexInfo) {
             return $this->startLine;
         }
 
-        foreach ($this->lineIndexInfo as $line => $index)
-        {
-            if ($index >= $this->offset)
-            {
+        foreach ($this->lineIndexInfo as $line => $index) {
+            if ($index >= $this->offset) {
                 return $line + $this->startLine;
             }
         }
@@ -444,8 +401,7 @@ class StringReader
     public function syntaxErrorOn(Token $token, string $message)
     {
         $super = $this->getSuperParent();
-        [$line, $index] = $super->silent(function () use ($super, $token)
-        {
+        [$line, $index] = $super->silent(function () use ($super, $token) {
             $super->offset = $token->getStartOffset() + $this->startIndex;
             return [$super->getLine(), $super->getIndex()];
         });
@@ -458,8 +414,7 @@ class StringReader
     public function syntaxErrorAt(int $offset, string $message)
     {
         $super = $this->getSuperParent();
-        [$line, $index] = $super->silent(function () use ($super, $offset)
-        {
+        [$line, $index] = $super->silent(function () use ($super, $offset) {
             $super->offset = $offset + $this->startIndex;
             return [$super->getLine(), $super->getIndex()];
         });

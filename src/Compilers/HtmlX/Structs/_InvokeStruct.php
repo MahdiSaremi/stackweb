@@ -12,31 +12,31 @@ class _InvokeStruct implements Token, _Node
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
+        public string       $name,
         /** @var _DomPropStruct[] */
-        public array $props,
+        public array        $props,
         /** @var _DomSlotStruct[] */
-        public array $slots,
+        public array        $slots,
 
-        public ?_Node $parent,
+        public ?_Node       $parent,
     )
     {
     }
 
-    public function isStatic() : bool
+    public function isStatic(): bool
     {
         return false;
     }
 
-    public function getChildren() : array
+    public function getChildren(): array
     {
         return [];
     }
 
-    public function getParent() : ?_Node
+    public function getParent(): ?_Node
     {
         return $this->parent;
     }

@@ -13,11 +13,11 @@ class _CliPhpStruct implements Token, Value
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $php,
-        public string $js,
+        public string       $php,
+        public string       $js,
     )
     {
     }

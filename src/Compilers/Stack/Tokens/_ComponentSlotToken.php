@@ -12,11 +12,11 @@ readonly class _ComponentSlotToken implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
-        public ?array $default,
+        public string       $name,
+        public ?array       $default,
     )
     {
     }

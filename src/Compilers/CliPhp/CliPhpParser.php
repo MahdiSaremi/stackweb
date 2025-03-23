@@ -24,7 +24,7 @@ class CliPhpParser implements Parser
 
     public StringBuilder $js;
 
-    public function parse() : void
+    public function parse(): void
     {
         $this->js = new StringBuilder();
 
@@ -34,8 +34,7 @@ class CliPhpParser implements Parser
 
     public function expr(Expr $expr)
     {
-        match (get_class($expr))
-        {
+        match (get_class($expr)) {
             Expr\BinaryOp\Plus::class => $this->binaryOpPlus($expr),
 
             Scalar\String_::class => $this->scalarString($expr),
@@ -44,7 +43,7 @@ class CliPhpParser implements Parser
         };
     }
 
-    public function getStruct() : Token
+    public function getStruct(): Token
     {
         return new _CliPhpStruct(
             $this->token->reader, $this->token->startOffset, $this->token->endOffset,

@@ -10,32 +10,22 @@ class DomRenderer
     public static function render(array $items)
     {
         $result = '';
-        foreach ($items as $item)
-        {
-            if (is_string($item))
-            {
+        foreach ($items as $item) {
+            if (is_string($item)) {
                 $result .= $item;
-            }
-            elseif (is_array($item))
-            {
-                switch ($item[0])
-                {
+            } elseif (is_array($item)) {
+                switch ($item[0]) {
                     case 'dom':
                         [, $name, $props, $slot] = $item;
                         $result .= "<$name" . static::renderProps($props);
-                        if (is_null($slot))
-                        {
+                        if (is_null($slot)) {
                             $result .= "/>";
-                        }
-                        else
-                        {
+                        } else {
                             $result .= ">" . static::render($slot) . "</$name>";
                         }
                         break;
                 }
-            }
-            elseif ($item instanceof ComponentContainer && $item->component->renderApi)
-            {
+            } elseif ($item instanceof ComponentContainer && $item->component->renderApi) {
                 $result .= $item->component->renderApi->call($item);
             }
         }
@@ -46,18 +36,12 @@ class DomRenderer
     public static function renderProps(array $props)
     {
         $result = '';
-        foreach ($props as $key => $value)
-        {
-            if ($value === true)
-            {
+        foreach ($props as $key => $value) {
+            if ($value === true) {
                 $result .= ' ' . $key;
-            }
-            elseif ($value === false)
-            {
+            } elseif ($value === false) {
                 continue;
-            }
-            else
-            {
+            } else {
                 $result .= ' ' . $key . '="' . e($value) . '"';
             }
         }

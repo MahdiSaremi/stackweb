@@ -16,22 +16,19 @@ class ComponentScope
     protected \WeakMap $apiResults;
 
     public function __construct(
-        public readonly SourceRenderer $renderer,
-        public readonly _StackStruct $stack,
+        public readonly SourceRenderer   $renderer,
+        public readonly _StackStruct     $stack,
         public readonly _ComponentStruct $component,
     )
     {
         $this->apiResults = new \WeakMap;
     }
 
-    public function apiResult(_ApiPhpStruct $value) : string
+    public function apiResult(_ApiPhpStruct $value): string
     {
-        if (isset($this->apiResults[$value]))
-        {
+        if (isset($this->apiResults[$value])) {
             return $this->apiResults[$value];
-        }
-        else
-        {
+        } else {
             return $this->apiResults[$value] = 'r' . $this->apiResults->count();
         }
     }
@@ -39,7 +36,7 @@ class ComponentScope
     /**
      * @return \WeakMap<_ApiPhpStruct, string>
      */
-    public function getApiResults() : \WeakMap
+    public function getApiResults(): \WeakMap
     {
         return $this->apiResults;
     }

@@ -3,7 +3,6 @@
 namespace StackWeb\Compilers\ApiPhp;
 
 use StackWeb\Compilers\StringReader;
-use StackWeb\Compilers\SyntaxError;
 
 class ApiPhpStaticTokenizer
 {
@@ -15,12 +14,9 @@ class ApiPhpStaticTokenizer
         $offset1 = $string->offset;
         $php = $string->readRange('{', '}', self::$escapes);
 
-        if ($string->readIf('}'))
-        {
+        if ($string->readIf('}')) {
             return new Tokens\_ApiPhpToken($string, $offset1, $string->offset, $php);
-        }
-        else
-        {
+        } else {
             $string->syntaxError("Expected '}}'");
         }
     }

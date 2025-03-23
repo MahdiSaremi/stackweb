@@ -1,6 +1,7 @@
 <?php
 
 namespace StackWeb\Compilers\CliPhp\Concerns;
+
 use PhpParser\Node\Expr;
 
 trait CompilesOperators

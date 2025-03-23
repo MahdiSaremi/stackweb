@@ -28,7 +28,7 @@ class StackParser implements Parser
         protected StringReader $string,
         public readonly string $stackName,
         /** @var Token[] */
-        protected array $tokens,
+        protected array        $tokens,
     )
     {
     }
@@ -42,8 +42,7 @@ class StackParser implements Parser
     }
 
 
-
-    public function parse() : void
+    public function parse(): void
     {
         $this->stack = new Structs\_StackStruct(
             $this->string,
@@ -54,31 +53,22 @@ class StackParser implements Parser
             [],
         );
 
-        foreach ($this->tokens as $token)
-        {
-            if ($token instanceof _ComponentToken)
-            {
+        foreach ($this->tokens as $token) {
+            if ($token instanceof _ComponentToken) {
                 $this->stack->componentNames[] = $token->name;
             }
         }
 
-        foreach ($this->tokens as $token)
-        {
-            if ($token instanceof _ComponentToken)
-            {
-                if (array_key_exists($token->name ?? '', $this->stack->components))
-                {
+        foreach ($this->tokens as $token) {
+            if ($token instanceof _ComponentToken) {
+                if (array_key_exists($token->name ?? '', $this->stack->components)) {
                     $token->syntaxError("Component [$token->name] is already defined");
                 }
 
                 $this->stack->components[$token->name] = $this->parseComponent($token);
-            }
-            elseif ($token instanceof _ImportToken)
-            {
+            } elseif ($token instanceof _ImportToken) {
                 $this->stack->import($token);
-            }
-            else
-            {
+            } else {
                 $token->syntaxError("Unknown token");
             }
         }
@@ -100,10 +90,8 @@ class StackParser implements Parser
         $slots = [];
         $states = [];
 
-        foreach ($component->props as $prop)
-        {
-            if (array_key_exists($prop->name, $props))
-            {
+        foreach ($component->props as $prop) {
+            if (array_key_exists($prop->name, $props)) {
                 $prop->syntaxError("Prop [$prop->name] is already defined");
             }
 
@@ -116,12 +104,9 @@ class StackParser implements Parser
             );
         }
 
-        foreach ($component->tokens as $token)
-        {
-            if ($token instanceof _ComponentSlotToken)
-            {
-                if (array_key_exists($token->name, $slots))
-                {
+        foreach ($component->tokens as $token) {
+            if ($token instanceof _ComponentSlotToken) {
+                if (array_key_exists($token->name, $slots)) {
                     $token->syntaxError("Slot [$token->name] is already defined");
                 }
 
@@ -130,11 +115,8 @@ class StackParser implements Parser
                     $token->name,
                     is_null($token->default) ? null : $this->parseHtmlX($token, $token->default),
                 );
-            }
-            elseif ($token instanceof _ComponentStateToken)
-            {
-                if (array_key_exists($token->name, $states))
-                {
+            } elseif ($token instanceof _ComponentStateToken) {
+                if (array_key_exists($token->name, $states)) {
                     $token->syntaxError("State [$token->name] is already defined");
                 }
 
@@ -143,24 +125,18 @@ class StackParser implements Parser
                     $token->name,
                     is_null($token->default) ? null : $this->parseValue($token->default),
                 );
-            }
-            elseif ($token instanceof _ComponentRenderToken)
-            {
-                if (isset($render))
-                {
+            } elseif ($token instanceof _ComponentRenderToken) {
+                if (isset($render)) {
                     $token->syntaxError("Render section is already defined");
                 }
 
                 $render = $this->parseHtmlX($token, $token->content);
-            }
-            else
-            {
+            } else {
                 $token->syntaxError("Unknown token");
             }
         }
 
-        if (is_null($render))
-        {
+        if (is_null($render)) {
             $component->syntaxError("Component not contains the render section");
         }
 
@@ -172,7 +148,7 @@ class StackParser implements Parser
         return $this->component;
     }
 
-    public function parseHtmlX(Token $base, array $tokens) : _HtmlXStruct
+    public function parseHtmlX(Token $base, array $tokens): _HtmlXStruct
     {
         $parser = new HtmlXParser($this->stack, $this->component, $base, $tokens);
         $parser->parse();
@@ -181,14 +157,11 @@ class StackParser implements Parser
 
     public function parseValue(mixed $value)
     {
-        if ($value instanceof _ApiPhpToken)
-        {
+        if ($value instanceof _ApiPhpToken) {
             $parser = new ApiPhpParser($value);
             $parser->parse();
             return $parser->getStruct();
-        }
-        elseif ($value instanceof _CliPhpToken)
-        {
+        } elseif ($value instanceof _CliPhpToken) {
             $parser = new CliPhpParser($value);
             $parser->parse();
             return $parser->getStruct();
@@ -198,7 +171,7 @@ class StackParser implements Parser
     }
 
 
-    public function getStruct() : Token
+    public function getStruct(): Token
     {
         return $this->stack;
     }

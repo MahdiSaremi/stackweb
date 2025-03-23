@@ -12,11 +12,11 @@ class _ComponentPropStruct implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
-        public mixed $default,
+        public string       $name,
+        public mixed        $default,
     )
     {
     }

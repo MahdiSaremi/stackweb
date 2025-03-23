@@ -12,11 +12,11 @@ class _HtmlXStruct implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
         /** @var _Node[] */
-        public array $nodes,
+        public array        $nodes,
     )
     {
     }

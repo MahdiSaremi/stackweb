@@ -15,15 +15,15 @@ class _StackStruct implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
+        public string       $name,
 
         /** @var string[] */
-        public array $componentNames,
+        public array        $componentNames,
         /** @var array<string, _ComponentStruct> */
-        public array $components,
+        public array        $components,
     )
     {
     }
@@ -43,34 +43,27 @@ class _StackStruct implements Token
         [$namespace, $component, $subject] = ComponentNaming::splitComponent($name);
 
         // Contains namespace
-        if (isset($namespace))
-        {
-            if ($namespace === '')
-            {
+        if (isset($namespace)) {
+            if ($namespace === '') {
                 return ComponentNaming::implodeComponent(null, $component, $subject);
             }
 
             return null;
         }
 
-        if (is_null($subject) && in_array($component, $this->componentNames))
-        {
+        if (is_null($subject) && in_array($component, $this->componentNames)) {
             return $this->name . ':' . $component;
         }
 
-        if (str_contains($component, '.'))
-        {
+        if (str_contains($component, '.')) {
             $base = Str::before($component, '.');
             $component = Str::after($component, '.');
-        }
-        else
-        {
+        } else {
             $base = $component;
             $component = null;
         }
 
-        if (isset($this->imports[$base]))
-        {
+        if (isset($this->imports[$base])) {
             $base = $this->imports[$base];
 
             return ComponentNaming::implodeComponent(

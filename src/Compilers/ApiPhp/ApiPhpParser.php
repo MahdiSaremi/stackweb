@@ -16,11 +16,11 @@ class ApiPhpParser implements Parser
     {
     }
 
-    public function parse() : void
+    public function parse(): void
     {
     }
 
-    public function getStruct() : Token
+    public function getStruct(): Token
     {
         return new _ApiPhpStruct(
             $this->token->reader, $this->token->startOffset, $this->token->endOffset,

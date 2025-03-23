@@ -17,12 +17,12 @@ readonly class _ImportToken implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
-        public ?string $as = null,
-        public ?string $subject = null,
+        public string       $name,
+        public ?string      $as = null,
+        public ?string      $subject = null,
     )
     {
         $this->componentName = $this->name . (isset($this->subject) ? ':' . $this->subject : '');

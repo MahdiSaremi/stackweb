@@ -16,8 +16,7 @@ class StackWebEngine implements Engine
 
     public function get($path, array $data = [])
     {
-        if (!isset($data['stack']))
-        {
+        if (!isset($data['stack'])) {
             throw new \Exception("Stack view should be called using StackWeb factory");
         }
 

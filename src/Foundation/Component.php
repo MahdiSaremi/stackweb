@@ -72,7 +72,6 @@ class Component
     }
 
 
-
     public function create()
     {
         return new ComponentContainer($this);
@@ -80,7 +79,7 @@ class Component
 
     protected ComponentContainer $static;
 
-    public function getStatic() : ComponentContainer
+    public function getStatic(): ComponentContainer
     {
         return $this->static ??= $this->create();
     }

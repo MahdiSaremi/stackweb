@@ -5,8 +5,8 @@ namespace StackWeb\Compilers\Contracts;
 interface Parser
 {
 
-    public function parse() : void;
+    public function parse(): void;
 
-    public function getStruct() : Token;
+    public function getStruct(): Token;
 
 }

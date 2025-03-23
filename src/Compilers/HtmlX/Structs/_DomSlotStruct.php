@@ -12,36 +12,31 @@ class _DomSlotStruct implements Token, _Node
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
+        public string       $name,
         /** @var _Node[] */
-        public array $inner,
+        public array        $inner,
 
-        public ?_Node $parent,
+        public ?_Node       $parent,
     )
     {
     }
 
     protected bool $isStatic;
 
-    public function isStatic() : bool
+    public function isStatic(): bool
     {
-        if (!isset($this->isStatic))
-        {
+        if (!isset($this->isStatic)) {
             $this->isStatic = true;
-            foreach ($this->props as $prop)
-            {
-                if (!$prop->isStatic())
-                {
+            foreach ($this->props as $prop) {
+                if (!$prop->isStatic()) {
                     return $this->isStatic = false;
                 }
             }
-            foreach ($this->inner as $child)
-            {
-                if (!$child->isStatic())
-                {
+            foreach ($this->inner as $child) {
+                if (!$child->isStatic()) {
                     return $this->isStatic = false;
                 }
             }
@@ -50,12 +45,12 @@ class _DomSlotStruct implements Token, _Node
         return $this->isStatic;
     }
 
-    public function getChildren() : array
+    public function getChildren(): array
     {
         return $this->inner;
     }
 
-    public function getParent() : ?_Node
+    public function getParent(): ?_Node
     {
         return $this->parent;
     }

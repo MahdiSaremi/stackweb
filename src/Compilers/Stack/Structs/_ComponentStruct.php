@@ -13,10 +13,10 @@ class _ComponentStruct implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $name,
+        public string       $name,
     )
     {
     }
@@ -36,8 +36,7 @@ class _ComponentStruct implements Token
 
     public function depComponent(string $component)
     {
-        if (!in_array($component, $this->depComponents))
-        {
+        if (!in_array($component, $this->depComponents)) {
             $this->depComponents[] = $component;
         }
     }

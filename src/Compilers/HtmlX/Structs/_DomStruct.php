@@ -13,36 +13,35 @@ class _DomStruct implements Token, _Node
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
         public string|Value $name,
         /** @var _DomPropStruct[] */
-        public array $props,
+        public array        $props,
         /** @var null|_Node[] */
-        public ?array $slot,
+        public ?array       $slot,
 
-        public ?_Node $parent,
+        public ?_Node       $parent,
     )
     {
     }
 
-    public function getChildren() : array
+    public function getChildren(): array
     {
         return $this->slot;
     }
 
-    public function getParent() : ?_Node
+    public function getParent(): ?_Node
     {
         return $this->parent;
     }
 
     protected bool $isNameStatic;
 
-    public function isNameStatic() : bool
+    public function isNameStatic(): bool
     {
-        if (!isset($this->isNameStatic))
-        {
+        if (!isset($this->isNameStatic)) {
             $this->isNameStatic = is_string($this->name);
         }
 
@@ -51,15 +50,12 @@ class _DomStruct implements Token, _Node
 
     protected bool $isPropsStatic;
 
-    public function isPropsStatic() : bool
+    public function isPropsStatic(): bool
     {
-        if (!isset($this->isPropsStatic))
-        {
+        if (!isset($this->isPropsStatic)) {
             $this->isPropsStatic = true;
-            foreach ($this->props as $prop)
-            {
-                if (!$prop->isStatic())
-                {
+            foreach ($this->props as $prop) {
+                if (!$prop->isStatic()) {
                     return $this->isPropsStatic = false;
                 }
             }
@@ -70,20 +66,16 @@ class _DomStruct implements Token, _Node
 
     protected bool $isStatic;
 
-    public function isStatic() : bool
+    public function isStatic(): bool
     {
-        if (!isset($this->isStatic))
-        {
-            if (!$this->isNameStatic() || !$this->isPropsStatic())
-            {
+        if (!isset($this->isStatic)) {
+            if (!$this->isNameStatic() || !$this->isPropsStatic()) {
                 return $this->isStatic = false;
             }
 
             $this->isStatic = true;
-            foreach ($this->slot as $child)
-            {
-                if (!$child->isStatic())
-                {
+            foreach ($this->slot as $child) {
+                if (!$child->isStatic()) {
                     return $this->isStatic = false;
                 }
             }

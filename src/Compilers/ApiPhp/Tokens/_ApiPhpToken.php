@@ -13,10 +13,10 @@ readonly class _ApiPhpToken implements Token, _PropValue
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public string $code,
+        public string       $code,
     )
     {
     }

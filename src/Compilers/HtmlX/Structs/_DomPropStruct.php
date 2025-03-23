@@ -12,17 +12,17 @@ class _DomPropStruct implements Token, _Item
     use TokenTrait;
 
     public function __construct(
-        public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public StringReader      $reader,
+        public int               $startOffset,
+        public int               $endOffset,
 
-        public string|Value $name,
+        public string|Value      $name,
         public string|true|Value $value,
     )
     {
     }
 
-    public function isStatic() : bool
+    public function isStatic(): bool
     {
         return !is_object($this->name) && !is_object($this->value);
     }

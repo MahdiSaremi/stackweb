@@ -7,11 +7,11 @@ use StackWeb\Compilers\StringReader;
 interface Token
 {
 
-    public function getReader() : StringReader;
+    public function getReader(): StringReader;
 
-    public function getStartOffset() : int;
+    public function getStartOffset(): int;
 
-    public function getEndOffset() : int;
+    public function getEndOffset(): int;
 
     public function syntaxError(string $message);
 

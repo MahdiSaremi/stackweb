@@ -12,11 +12,11 @@ class _ComponentSlotStruct implements Token
     use TokenTrait;
 
     public function __construct(
-        public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public StringReader  $reader,
+        public int           $startOffset,
+        public int           $endOffset,
 
-        public string $name,
+        public string        $name,
         public ?_HtmlXStruct $default,
     )
     {

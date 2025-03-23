@@ -23,7 +23,8 @@ class HtmlXCompilerTest extends TestCase
                     <a href="#">Home { $text } {{ user()->id }}</a>
                 </div>
                 <div />
-            HtmlX
+            HtmlX,
+            'test.php',
         ));
 
         $tokenizer->parse();

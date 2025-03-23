@@ -13,27 +13,27 @@ class _TextStruct implements Token, _Node
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
         public string|Value $text,
 
-        public ?_Node $parent,
+        public ?_Node       $parent,
     )
     {
     }
 
-    public function getChildren() : array
+    public function getChildren(): array
     {
         return [];
     }
 
-    public function getParent() : ?_Node
+    public function getParent(): ?_Node
     {
         return $this->parent;
     }
 
-    public function isStatic() : bool
+    public function isStatic(): bool
     {
         return !is_object($this->text);
     }

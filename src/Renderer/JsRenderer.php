@@ -13,30 +13,24 @@ class JsRenderer
 
     public static function render($object)
     {
-        switch (gettype($object))
-        {
+        switch (gettype($object)) {
             case 'string':
                 return "'" . static::renderInString($object) . "'";
 
             case 'integer':
             case 'double':
-                return (string) $object;
+                return (string)$object;
 
             case 'boolean':
                 return $object ? 'true' : 'false';
 
             case 'array':
-                if (array_is_list($object))
-                {
+                if (array_is_list($object)) {
                     return '[' . implode(',', array_map(static::render(...), $object)) . ']';
-                }
-                else
-                {
+                } else {
                     $result = '';
-                    foreach ($object as $key => $value)
-                    {
-                        if ($result !== '')
-                        {
+                    foreach ($object as $key => $value) {
+                        if ($result !== '') {
                             $result .= ",";
                         }
 
@@ -63,30 +57,22 @@ class JsRenderer
 
     public static function renderIn(SourceRenderer $renderer, StringBuilder $out, $object)
     {
-        if (is_array($object))
-        {
-            if (array_is_list($object))
-            {
+        if (is_array($object)) {
+            if (array_is_list($object)) {
                 $out->append('[');
-                foreach ($object as $i => $value)
-                {
-                    if ($i > 0)
-                    {
+                foreach ($object as $i => $value) {
+                    if ($i > 0) {
                         $out->append(',');
                     }
 
                     static::renderIn($renderer, $out, $value);
                 }
                 $out->append(']');
-            }
-            else
-            {
+            } else {
                 $out->append('{');
                 $isFirst = true;
-                foreach ($object as $key => $value)
-                {
-                    if ($isFirst)
-                    {
+                foreach ($object as $key => $value) {
+                    if ($isFirst) {
                         $out->append(',');
                         $isFirst = false;
                     }
@@ -98,17 +84,11 @@ class JsRenderer
                 }
                 $out->append('}');
             }
-        }
-        elseif ($object instanceof _CliPhpStruct)
-        {
+        } elseif ($object instanceof _CliPhpStruct) {
             $out->appendCode($object->js);
-        }
-        elseif ($object instanceof _ApiPhpStruct)
-        {
+        } elseif ($object instanceof _ApiPhpStruct) {
             $renderer->renderCliGetApiResult($out, $object);
-        }
-        else
-        {
+        } else {
             $out->append(static::render($object));
         }
     }

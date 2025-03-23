@@ -11,8 +11,7 @@ class StringBuilder
 
     public function append(string $string)
     {
-        if (count($this->strings) && end($this->strings)[0] == 'string')
-        {
+        if (count($this->strings) && end($this->strings)[0] == 'string') {
             $this->strings[count($this->strings) - 1][1] .= $string;
             return $this;
         }
@@ -23,16 +22,11 @@ class StringBuilder
 
     public function appendObject($object)
     {
-        if (is_string($object) || is_int($object) || is_double($object))
-        {
-            return $this->append((string) $object);
-        }
-        elseif (is_bool($object))
-        {
+        if (is_string($object) || is_int($object) || is_double($object)) {
+            return $this->append((string)$object);
+        } elseif (is_bool($object)) {
             return $this->append($object ? '1' : '');
-        }
-        elseif (is_null($object))
-        {
+        } elseif (is_null($object)) {
             return $this;
         }
 
@@ -42,8 +36,7 @@ class StringBuilder
 
     public function appendCode(string $php, bool $addParenthesis = false)
     {
-        if ($addParenthesis)
-        {
+        if ($addParenthesis) {
             $php = "($php)";
         }
 
@@ -53,8 +46,7 @@ class StringBuilder
 
     public function prepend(string $string)
     {
-        if (count($this->strings) && $this->strings[0][0] == 'string')
-        {
+        if (count($this->strings) && $this->strings[0][0] == 'string') {
             $this->strings[0][1] = $string . $this->strings[0][1];
             return $this;
         }
@@ -65,16 +57,11 @@ class StringBuilder
 
     public function prependObject($object)
     {
-        if (is_string($object) || is_int($object) || is_double($object))
-        {
-            return $this->prepend((string) $object);
-        }
-        elseif (is_bool($object))
-        {
+        if (is_string($object) || is_int($object) || is_double($object)) {
+            return $this->prepend((string)$object);
+        } elseif (is_bool($object)) {
             return $this->prepend($object ? '1' : '');
-        }
-        elseif (is_null($object))
-        {
+        } elseif (is_null($object)) {
             return $this;
         }
 
@@ -84,8 +71,7 @@ class StringBuilder
 
     public function prependCode(string $php, bool $addParenthesis = false)
     {
-        if ($addParenthesis)
-        {
+        if ($addParenthesis) {
             $php = "($php)";
         }
 
@@ -97,19 +83,14 @@ class StringBuilder
     public function toCode()
     {
         $result = "";
-        foreach ($this->strings as [$type, $value])
-        {
-            if ($result !== "")
-            {
+        foreach ($this->strings as [$type, $value]) {
+            if ($result !== "") {
                 $result .= ".";
             }
 
-            if ($type == 'code')
-            {
+            if ($type == 'code') {
                 $result .= $value;
-            }
-            else
-            {
+            } else {
                 $result .= PhpRenderer::render($value);
             }
         }

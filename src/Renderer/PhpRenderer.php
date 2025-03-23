@@ -7,14 +7,13 @@ class PhpRenderer
 
     public static function render($object)
     {
-        switch (gettype($object))
-        {
+        switch (gettype($object)) {
             case 'string':
                 return "'" . static::renderInString($object) . "'";
 
             case 'integer':
             case 'double':
-                return (string) $object;
+                return (string)$object;
 
             case 'boolean':
                 return $object ? 'true' : 'false';
@@ -22,15 +21,12 @@ class PhpRenderer
             case 'array':
                 $result = '';
                 $i = 0;
-                foreach ($object as $key => $value)
-                {
-                    if ($result !== '')
-                    {
+                foreach ($object as $key => $value) {
+                    if ($result !== '') {
                         $result .= ", ";
                     }
 
-                    if (!is_int($key) || $key !== $i)
-                    {
+                    if (!is_int($key) || $key !== $i) {
                         $result .= static::render($key) . " => " . static::render($value);
                         continue;
                     }

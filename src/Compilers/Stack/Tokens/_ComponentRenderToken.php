@@ -12,10 +12,10 @@ readonly class _ComponentRenderToken implements Token
 
     public function __construct(
         public StringReader $reader,
-        public int $startOffset,
-        public int $endOffset,
+        public int          $startOffset,
+        public int          $endOffset,
 
-        public array $content,
+        public array        $content,
     )
     {
     }

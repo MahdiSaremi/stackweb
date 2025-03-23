@@ -13,7 +13,6 @@ use StackWeb\Compilers\HtmlX\Structs\_HtmlXStruct;
 use StackWeb\Compilers\HtmlX\Structs\_Node;
 use StackWeb\Compilers\Stack\Structs\_ComponentStruct;
 use StackWeb\Compilers\Stack\Structs\_StackStruct;
-use StackWeb\Compilers\StringReader;
 
 class HtmlXParser implements Parser
 {
@@ -21,35 +20,29 @@ class HtmlXParser implements Parser
     public array $nodes;
 
     public function __construct(
-        public readonly _StackStruct $stack,
+        public readonly _StackStruct      $stack,
         public readonly ?_ComponentStruct $component,
-        public readonly Token $base,
-        public readonly array $tokens,
+        public readonly Token             $base,
+        public readonly array             $tokens,
     )
     {
     }
 
-    public function parse() : void
+    public function parse(): void
     {
         $this->nodes = $this->convertNodes($this->tokens);
     }
 
-    public function convertNodes(array $tokens, ?_Node $parent = null) : array
+    public function convertNodes(array $tokens, ?_Node $parent = null): array
     {
         $nodes = [];
-        foreach ($tokens as $token)
-        {
-            if ($token instanceof Tokens\_DomToken)
-            {
-                if ($invoke = $this->parseInvoke($token, $parent))
-                {
+        foreach ($tokens as $token) {
+            if ($token instanceof Tokens\_DomToken) {
+                if ($invoke = $this->parseInvoke($token, $parent)) {
                     $nodes[] = $invoke;
-                }
-                else
-                {
+                } else {
                     $props = [];
-                    foreach ($token->props as $prop)
-                    {
+                    foreach ($token->props as $prop) {
                         $props[] = new Structs\_DomPropStruct(
                             $prop->reader,
                             $prop->startOffset,
@@ -71,17 +64,13 @@ class HtmlXParser implements Parser
 
                     $nodes[] = $node;
                 }
-            }
-            elseif ($token instanceof Tokens\_DomText)
-            {
+            } elseif ($token instanceof Tokens\_DomText) {
                 $nodes[] = new Structs\_TextStruct(
                     $token->reader, $token->startOffset, $token->endOffset,
                     $this->convertValue($token->value),
                     $parent,
                 );
-            }
-            else
-            {
+            } else {
                 $token->syntaxError("Unknown token");
             }
         }
@@ -91,15 +80,13 @@ class HtmlXParser implements Parser
 
     public function parseInvoke(Tokens\_DomToken $dom, ?_Node $parent = null)
     {
-        if (is_string($dom->name) && strlen($dom->name) && $dom->name[0] !== lcfirst($dom->name[0]))
-        {
+        if (is_string($dom->name) && strlen($dom->name) && $dom->name[0] !== lcfirst($dom->name[0])) {
             $component = $this->stack->resolveAliasComponent($dom->name) ?? $dom->name;
 
             $this->component?->depComponent($component);
 
             $props = [];
-            foreach ($dom->props as $prop)
-            {
+            foreach ($dom->props as $prop) {
                 $props[] = new Structs\_DomPropStruct(
                     $prop->reader,
                     $prop->startOffset,
@@ -119,21 +106,16 @@ class HtmlXParser implements Parser
             );
 
             $slots = [];
-            if ($inner = $dom->inner)
-            {
-                foreach ($inner as $i => $token)
-                {
-                    if ($token instanceof Tokens\_DomToken && $token->name === 'Slot')
-                    {
+            if ($inner = $dom->inner) {
+                foreach ($inner as $i => $token) {
+                    if ($token instanceof Tokens\_DomToken && $token->name === 'Slot') {
                         $name = collect($token->props)->firstWhere('name', 'name')?->value;
 
-                        if (is_null($name))
-                        {
+                        if (is_null($name)) {
                             $token->syntaxError("Slot should contains [name] prop");
                         }
 
-                        if (is_bool($name))
-                        {
+                        if (is_bool($name)) {
                             $token->syntaxError("Slot [name] prop should have a value");
                         }
 
@@ -150,8 +132,7 @@ class HtmlXParser implements Parser
                 }
             }
 
-            if (!in_array('slot', Arr::pluck($slots, 'name')) && $inner)
-            {
+            if (!in_array('slot', Arr::pluck($slots, 'name')) && $inner) {
                 array_unshift($slots, new Structs\_DomSlotStruct(
                     $dom->reader,
                     $dom->startOffset, $dom->endOffset,
@@ -171,14 +152,11 @@ class HtmlXParser implements Parser
 
     public function convertValue(mixed $value)
     {
-        if ($value instanceof _ApiPhpToken)
-        {
+        if ($value instanceof _ApiPhpToken) {
             $parser = new ApiPhpParser($value);
             $parser->parse();
             return $parser->getStruct();
-        }
-        elseif ($value instanceof _CliPhpToken)
-        {
+        } elseif ($value instanceof _CliPhpToken) {
             $parser = new CliPhpParser($value);
             $parser->parse();
             return $parser->getStruct();
@@ -187,7 +165,7 @@ class HtmlXParser implements Parser
         return $value;
     }
 
-    public function getStruct() : Token
+    public function getStruct(): Token
     {
         return new _HtmlXStruct(
             $this->base->getReader(), $this->base->getStartOffset(), $this->base->getEndOffset(),

@@ -2,7 +2,6 @@
 
 namespace StackWeb\Renderer\Contracts;
 
-use StackWeb\Compilers\Contracts\Token;
 use StackWeb\Compilers\Stack\Structs\_ComponentPropStruct;
 use StackWeb\Compilers\Stack\Structs\_ComponentSlotStruct;
 use StackWeb\Compilers\Stack\Structs\_ComponentStateStruct;
@@ -17,29 +16,29 @@ interface SourceRenderer
 
     public function __construct(StringReader $reader);
 
-    public function renderStack(SourceBuilder $out, _StackStruct $stack) : void;
+    public function renderStack(SourceBuilder $out, _StackStruct $stack): void;
 
-    public function getComponentScope() : ComponentScope;
+    public function getComponentScope(): ComponentScope;
 
-    public function renderComponent(SourceBuilder $out, _ComponentStruct $component) : void;
+    public function renderComponent(SourceBuilder $out, _ComponentStruct $component): void;
 
-    public function renderComponentStates(SourceBuilder $out, _ComponentStruct $component) : void;
+    public function renderComponentStates(SourceBuilder $out, _ComponentStruct $component): void;
 
-    public function renderComponentState(SourceBuilder $out, _ComponentStruct $component, _ComponentStateStruct $state) : void;
+    public function renderComponentState(SourceBuilder $out, _ComponentStruct $component, _ComponentStateStruct $state): void;
 
-    public function renderComponentProps(SourceBuilder $out, _ComponentStruct $component) : void;
+    public function renderComponentProps(SourceBuilder $out, _ComponentStruct $component): void;
 
-    public function renderComponentProp(SourceBuilder $out, _ComponentStruct $component, _ComponentPropStruct $prop) : void;
+    public function renderComponentProp(SourceBuilder $out, _ComponentStruct $component, _ComponentPropStruct $prop): void;
 
-    public function renderComponentSlots(SourceBuilder $out, _ComponentStruct $component) : void;
+    public function renderComponentSlots(SourceBuilder $out, _ComponentStruct $component): void;
 
-    public function renderComponentSlot(SourceBuilder $out, _ComponentStruct $component, _ComponentSlotStruct $slot) : void;
+    public function renderComponentSlot(SourceBuilder $out, _ComponentStruct $component, _ComponentSlotStruct $slot): void;
 
-    public function renderComponentRenderApi(SourceBuilder $out, _ComponentStruct $component) : void;
+    public function renderComponentRenderApi(SourceBuilder $out, _ComponentStruct $component): void;
 
-    public function renderComponentRenderCli(SourceBuilder $out, _ComponentStruct $component) : void;
-    
+    public function renderComponentRenderCli(SourceBuilder $out, _ComponentStruct $component): void;
 
-    public function value(mixed $value) : string;
+
+    public function value(mixed $value): string;
 
 }

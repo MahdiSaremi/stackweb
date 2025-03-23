@@ -23,32 +23,27 @@ class CliPhpStaticTokenizer
         return new Tokens\_CliPhpToken($string, $offset1, $string->offset, $php, static::parseExpr($php, $string, $offset1, $startLine));
     }
 
-    private static function parseExpr(string $php, StringReader $string, int $start, int $startLine) : Expr
+    private static function parseExpr(string $php, StringReader $string, int $start, int $startLine): Expr
     {
         $additive = 14; // strlen("<?php return (");
 
-        try
-        {
+        try {
             $parser = (new ParserFactory)->createForHostVersion();
             $stmts = $parser->parse("<?php return ($php);");
-        }
-        catch (Error $error)
-        {
+        } catch (Error $error) {
             throw new SyntaxError(
                 sprintf("%s on line %s in [%s]", $error->getRawMessage(), $startLine + $error->getStartLine() - 1, $string->fileName),
             );
         }
 
-        if (count($stmts) > 1)
-        {
+        if (count($stmts) > 1) {
             $string->syntaxErrorAt(
                 $stmts[1]->getStartTokenPos() + $start - $additive,
                 "Expected inline variable"
             );
         }
 
-        if (!($stmts[0] instanceof Return_) || !$stmts[0]->expr)
-        {
+        if (!($stmts[0] instanceof Return_) || !$stmts[0]->expr) {
             $string->syntaxErrorAt(
                 $stmts[0]->getStartTokenPos() + $start - $additive,
                 "Expected inline variable"
