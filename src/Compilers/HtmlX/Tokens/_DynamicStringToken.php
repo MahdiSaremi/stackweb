@@ -1,14 +1,12 @@
 <?php
 
-namespace StackWeb\Compilers\CliPhp\Tokens;
+namespace StackWeb\Compilers\HtmlX\Tokens;
 
-use PhpParser\Node\Expr;
 use StackWeb\Compilers\Concerns\TokenTrait;
 use StackWeb\Compilers\Contracts\Token;
-use StackWeb\Compilers\HtmlX\Tokens\_PropValue;
 use StackWeb\Compilers\StringReader;
 
-readonly class _CliPhpToken implements Token, _PropValue
+class _DynamicStringToken implements Token, _PropValue
 {
     use TokenTrait;
 
@@ -17,10 +15,9 @@ readonly class _CliPhpToken implements Token, _PropValue
         public int          $startOffset,
         public int          $endOffset,
 
-        public string       $phpCode,
-        public Expr         $expr,
+        /** @var _PreToken[] */
+        public array        $tokens,
     )
     {
     }
-
 }

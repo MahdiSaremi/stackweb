@@ -1,13 +1,12 @@
 <?php
 
-namespace StackWeb\Compilers\CliPhp\Structs;
+namespace StackWeb\Compilers\HtmlX\Tokens;
 
 use StackWeb\Compilers\Concerns\TokenTrait;
 use StackWeb\Compilers\Contracts\Token;
-use StackWeb\Compilers\Contracts\Value;
 use StackWeb\Compilers\StringReader;
 
-class _CliPhpStruct implements Token, Value
+class _PhpScriptToken implements Token
 {
     use TokenTrait;
 
@@ -16,10 +15,9 @@ class _CliPhpStruct implements Token, Value
         public int          $startOffset,
         public int          $endOffset,
 
-        public string       $php,
-        public string       $js,
+        public string       $tag,
+        public string       $code,
     )
     {
     }
-
 }

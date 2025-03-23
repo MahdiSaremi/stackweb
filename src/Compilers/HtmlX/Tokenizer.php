@@ -3,8 +3,9 @@
 namespace StackWeb\Compilers\HtmlX;
 
 use StackWeb\Compilers\ApiPhp\ApiPhpStaticTokenizer;
-use StackWeb\Compilers\CliPhp\CliPhpStaticTokenizer;
 use StackWeb\Compilers\Contracts\Tokenizer as TokenizerContract;
+use StackWeb\Compilers\HtmlX\Tokens\_DynamicStringToken;
+use StackWeb\Compilers\HtmlX\Tokens\_PreToken;
 use StackWeb\Compilers\StringReader;
 
 class Tokenizer implements TokenizerContract
@@ -25,9 +26,9 @@ class Tokenizer implements TokenizerContract
         $tokens = [];
         /** @var Tokens\_PreToken $preToken */
         foreach ($pre as $preToken) {
-            if ($preToken->type == 'text') {
+            if ($preToken->type == Tokens\_PreToken::TEXT) {
                 $tokens[] = new Tokens\_DomText($preToken->reader, $preToken->startOffset, $preToken->endOffset, $preToken->content);
-            } elseif ($preToken->type == 'open') {
+            } elseif ($preToken->type == Tokens\_PreToken::OPEN) {
                 $tokens[] = new Tokens\_DomToken(
                     $preToken->reader,
                     $preToken->startOffset,
@@ -37,7 +38,7 @@ class Tokenizer implements TokenizerContract
                     $preToken->selfClose,
                     null
                 );
-            } elseif ($preToken->type == 'close') {
+            } elseif ($preToken->type == Tokens\_PreToken::CLOSE) {
                 for ($i = count($tokens) - 1; $i >= 0; $i--) {
                     if (
                         $tokens[$i] instanceof Tokens\_DomToken &&
@@ -81,7 +82,7 @@ class Tokenizer implements TokenizerContract
                     if ($tag = $string->readHWord()) {
                         $string->readWhiteSpaces();
                         if ($string->readIf('>')) {
-                            $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'close', $tag);
+                            $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, Tokens\_PreToken::CLOSE, $tag);
                         } else {
                             $string->syntaxError("Expected '>'");
                         }
@@ -90,16 +91,20 @@ class Tokenizer implements TokenizerContract
                     }
                 } elseif ($tag = $string->readHWord()) {
                     [$props, $selfClose] = $this->parseProps($string);
-                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'open', $tag, $selfClose, $props);
+                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, Tokens\_PreToken::OPEN, $tag, $selfClose, $props);
+
+                    if (!$selfClose) {
+                        if ($tag == 'script') {
+                            array_push($tokens, ...$this->parseScriptInner($string));
+                        }
+                    }
+                } elseif ($string->readIf('?') && $phpOpen = $string->readIf(['php', '='])) {
+                    $tokens[] = $this->parsePhpScriptTag($string, $phpOpen == 'php' ? Tokens\_PreToken::PHP : Tokens\_PreToken::PHP_EQ);
                 } else {
                     $this->appendText($string, $tokens, $read . $tag);
                 }
-            } elseif ($read === '{') {
-                if ($string->readIf('{')) {
-                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'text', ApiPhpStaticTokenizer::read($string));
-                } else {
-                    $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, 'text', CliPhpStaticTokenizer::read($string));
-                }
+            } elseif ($read === '{' && $string->readIf('{')) {
+                $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, Tokens\_PreToken::TEXT, ApiPhpStaticTokenizer::read($string));
             } else {
                 $this->appendText($string, $tokens, $read);
             }
@@ -122,8 +127,6 @@ class Tokenizer implements TokenizerContract
             if ($name === '') {
                 if ($string->readIf('{{')) {
                     $name = ApiPhpStaticTokenizer::read($string);
-                } elseif ($string->readIf('{')) {
-                    $name = CliPhpStaticTokenizer::read($string);
                 }
             }
 
@@ -132,13 +135,11 @@ class Tokenizer implements TokenizerContract
                 if ($string->readIf('=')) {
                     $string->readWhiteSpaces();
                     if ($string->readIf('"')) {
-                        $value = $string->readEscape('"', translate: true);
+                        $value = $this->readHtmlString($string, '"');
                     } elseif ($string->readIf("'")) {
-                        $value = $string->readEscape("'", translate: true);
+                        $value = $this->readHtmlString($string, "'");
                     } elseif ($string->readIf('{{')) {
                         $value = ApiPhpStaticTokenizer::read($string);
-                    } elseif ($string->readIf('{')) {
-                        $value = CliPhpStaticTokenizer::read($string);
                     } else {
                         $string->syntaxError("Expected ' or \" ");
                     }
@@ -161,13 +162,82 @@ class Tokenizer implements TokenizerContract
         $string->syntaxError("Expected '>'");
     }
 
-    public function appendText(StringReader $string, array &$tokens, string $text)
+    public function parseScriptInner(StringReader $string): array
     {
-        if ($tokens && end($tokens)->type == 'text') {
+        $tokens = [];
+
+        $inStringScope = false;
+
+        while (!$string->end()) {
+            $offset1 = $string->offset;
+            $read = $string->read();
+
+            if (!$inStringScope && $read == '<' && $string->readIf('/')) {
+                $string->readWhiteSpaces();
+                if ($string->readHWord() == 'script') {
+                    $string->readWhiteSpaces();
+                    if ($string->readIf('>')) {
+                        $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, Tokens\_PreToken::CLOSE, 'script');
+                        break;
+                    } else {
+                        $string->syntaxError("Expected '>'");
+                    }
+                }
+
+                $string->offset = $offset1 + 1;
+            }
+
+            if ($inStringScope && $read == "\\") {
+                $this->appendText($string, $tokens, $read . $string->read());
+            } elseif ($read == '"' || $read == "'" || $read == '`') {
+                $inStringScope = $inStringScope ? false : $read;
+                $this->appendText($string, $tokens, $read);
+            } elseif ($read === '{' && $string->readIf('{')) {
+                $tokens[] = new Tokens\_PreToken($string, $offset1, $string->offset, Tokens\_PreToken::TEXT, ApiPhpStaticTokenizer::read($string));
+            } else {
+                $this->appendText($string, $tokens, $read);
+            }
+        }
+
+        return $tokens;
+    }
+
+    public function parsePhpScriptTag(StringReader $string, int $type): Tokens\_PreToken
+    {
+        $code = '';
+        $inStringScope = false;
+        $start = $string->offset;
+
+        while (!$string->end()) {
+            $offset1 = $string->offset;
+            $read = $string->read();
+
+            if (!$inStringScope && $read == '?' && $string->readIf('>')) {
+                break;
+            } elseif ($inStringScope && $read == "\\") {
+                $code .= $read . $string->read();
+            } elseif ($read == '"' || $read == "'") {
+                $inStringScope = $inStringScope ? false : $read;
+                $code .= $read;
+            } else {
+                $code .= $read;
+            }
+        }
+
+        return new Tokens\_PreToken($string, $start, $string->offset, $type, $code);
+    }
+
+    public function appendText(StringReader $string, array &$tokens, string $text): void
+    {
+        if ($tokens &&
+            end($tokens) instanceof Tokens\_PreToken &&
+            end($tokens)->type == Tokens\_PreToken::TEXT &&
+            is_string(end($tokens)->content)
+        ) {
             end($tokens)->content .= $text;
             end($tokens)->endOffset = $string->offset;
         } else {
-            $tokens[] = new Tokens\_PreToken($string, $string->offset - strlen($text), $string->offset, 'text', $text);
+            $tokens[] = new Tokens\_PreToken($string, $string->offset - strlen($text), $string->offset, Tokens\_PreToken::TEXT, $text);
         }
     }
 
@@ -176,6 +246,37 @@ class Tokenizer implements TokenizerContract
         if ($string->readWhiteSpaces()) {
             $this->appendText($string, $tokens, ' ');
         }
+    }
+
+    public function readHtmlString(StringReader $string, string $char): string|_DynamicStringToken
+    {
+        $startOffset = $string->offset;
+        if ($string->read(silent: true) === $char) {
+            $string->read();
+            return '';
+        }
+
+        $tokens = [];
+
+        while (null !== $next = $string->read()) {
+            if ($next == $char) {
+                break;
+            } elseif ($next == '{' && $string->readIf('{')) {
+                $tokens[] = ApiPhpStaticTokenizer::read($string);
+            } else {
+                $this->appendText($string, $tokens, $next);
+            }
+        }
+
+        if (count($tokens) == 0) {
+            return '';
+        }
+
+        if (count($tokens) == 1 && $tokens[0]->type == Tokens\_PreToken::TEXT && is_string($tokens[0]->content)) {
+            return $tokens[0]->content;
+        }
+
+        return new _DynamicStringToken($string, $startOffset, $string->offset, $tokens);
     }
 
     public function getTokens(): array

@@ -4,6 +4,7 @@ namespace StackWeb\Compilers;
 
 use Closure;
 use StackWeb\Compilers\Contracts\Token;
+use StackWeb\Compilers\HtmlX\Tokens\_PreToken;
 
 class StringReader
 {
@@ -159,7 +160,7 @@ class StringReader
         );
     }
 
-    public function readWhiteSpaces()
+    public function readWhiteSpaces(): string
     {
         return $this->readWhile(ctype_space(...));
     }
@@ -171,23 +172,27 @@ class StringReader
         bool   $includeBreaker = false,
         bool   $translate = false,
         ?bool  &$found = false
-    )
+    ): string
     {
         if ($this->read(silent: true) === $char) {
-            return $this->read();
+            $found = true;
+            if ($skipBreaker) {
+                $this->read();
+            }
+            return $includeBreaker ? $char : '';
         }
 
         $skipNext = false;
         return $this->readUntil(
             function ($value) use (&$skipNext, $char, $escape, $translate) {
-                if ($value === $escape) {
-                    $skipNext = true;
-                    return $translate ? static::DONT_INCLUDE : false;
-                }
-
                 if ($skipNext) {
                     $skipNext = false;
                     return $translate ? static::replaceWith($this->getEscapedValue($value) ?? $escape . $value) : false;
+                }
+
+                if ($value === $escape) {
+                    $skipNext = true;
+                    return $translate ? static::DONT_INCLUDE : false;
                 }
 
                 return $value === $char;
@@ -198,7 +203,7 @@ class StringReader
         );
     }
 
-    protected function getEscapedValue(string $char)
+    protected function getEscapedValue(string $char): ?string
     {
         return match ($char) {
             'n' => "\n",
@@ -320,7 +325,7 @@ class StringReader
 
     public function readHWord()
     {
-        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '_', ':', '.', '-']));
+        return $this->readWhile(fn($value) => ctype_alpha($value) || in_array($value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '_', ':', '.', '-', '#', '@', '$']));
     }
 
     public function readIf(
