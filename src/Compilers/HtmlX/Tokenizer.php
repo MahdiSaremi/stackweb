@@ -60,6 +60,22 @@ class Tokenizer implements TokenizerContract
                         continue 2;
                     }
                 }
+            } elseif ($preToken->type == Tokens\_PreToken::PHP) {
+                $tokens[] = new Tokens\_PhpScriptToken(
+                    $preToken->reader,
+                    $preToken->startOffset,
+                    $preToken->endOffset,
+                    $preToken->content,
+                );
+            } elseif ($preToken->type == Tokens\_PreToken::PHP_EQ) {
+                $tokens[] = new Tokens\_PhpEqScriptToken(
+                    $preToken->reader,
+                    $preToken->startOffset,
+                    $preToken->endOffset,
+                    $preToken->content,
+                );
+            } else {
+                throw new \RuntimeException("Unhandled token type: " . $preToken->type);
             }
         }
 

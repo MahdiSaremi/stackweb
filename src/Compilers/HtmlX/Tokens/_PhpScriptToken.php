@@ -15,7 +15,6 @@ class _PhpScriptToken implements Token
         public int          $startOffset,
         public int          $endOffset,
 
-        public string       $tag,
         public string       $code,
     )
     {

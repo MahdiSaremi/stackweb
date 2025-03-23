@@ -1,12 +1,12 @@
 <?php
 
-namespace StackWeb\Compilers\Stack\Structs;
+namespace StackWeb\Compilers\HtmlX\Tokens;
 
 use StackWeb\Compilers\Concerns\TokenTrait;
 use StackWeb\Compilers\Contracts\Token;
 use StackWeb\Compilers\StringReader;
 
-class _ComponentPropStruct implements Token
+class _PhpEqScriptToken implements Token
 {
     use TokenTrait;
 
@@ -15,10 +15,8 @@ class _ComponentPropStruct implements Token
         public int          $startOffset,
         public int          $endOffset,
 
-        public string       $name,
-        public mixed        $default,
+        public string       $code,
     )
     {
     }
-
 }

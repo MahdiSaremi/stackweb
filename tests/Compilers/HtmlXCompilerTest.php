@@ -11,18 +11,22 @@ class HtmlXCompilerTest extends TestCase
 
     public function test_0()
     {
-        $tokenizer = new \StackWeb\Compilers\Stack\Tokenizer(new StringReader(
+        $tokenizer = \StackWeb\Compilers\Stack\StackParser::from(new StringReader(
             <<<'Html'
+            <?php
+            $name = useState();
+            ?>
+            
             <input type="text">
             <div>
                 <div class="text-error">Error <b>occurred</b></div>
             </div>
             Html,
             'test.php',
-        ));
+        ), 'test');
 
         $tokenizer->parse();
-        dd($tokenizer->getTokens());
+        dd($tokenizer->getStruct());
     }
 
     public function test_1()
